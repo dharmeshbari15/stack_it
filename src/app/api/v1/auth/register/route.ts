@@ -19,6 +19,7 @@ import {
     conflict,
 } from '@/lib/api-handler';
 import { parseBody } from '@/lib/validate';
+import { RegisterUserResponse } from '@/types/api';
 
 // ─── Request Schema ───────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ export type RegisterBody = z.infer<typeof registerSchema>;
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
-export const POST = apiHandler(async (req) => {
+export const POST = apiHandler<any, RegisterUserResponse>(async (req) => {
     const { username, email, password } = await parseBody(req, registerSchema);
 
     // Check for existing email or username in a single parallel query
@@ -84,5 +85,5 @@ export const POST = apiHandler(async (req) => {
     });
 
     // 201 Created — registration is a resource creation action
-    return apiSuccess(user, 201);
+    return apiSuccess(user as RegisterUserResponse, 201);
 });

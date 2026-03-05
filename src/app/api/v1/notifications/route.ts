@@ -1,16 +1,14 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { apiHandler } from '@/lib/api-handler';
+import { apiHandler, apiSuccess, unauthorized } from '@/lib/api-handler';
+import { NotificationItem } from '@/types/api';
 
-export const GET = apiHandler(async (req: NextRequest) => {
+export const GET = apiHandler<any, NotificationItem[]>(async (req: NextRequest) => {
     const session = await auth();
 
     if (!session?.user) {
-        return {
-            status: 401,
-            body: { error: { message: 'Authentication required' } }
-        };
+        throw unauthorized();
     }
 
     const { searchParams } = new URL(req.url);
@@ -34,15 +32,5 @@ export const GET = apiHandler(async (req: NextRequest) => {
         }
     });
 
-    // Optionally enrich with basic context if needed
-    // For now, returning the raw notifications with actor info is sufficient
-    // as the reference_id can be used by the frontend to link.
-
-    return {
-        status: 200,
-        body: {
-            success: true,
-            data: notifications
-        }
-    };
+    return apiSuccess(notifications as NotificationItem[]);
 });

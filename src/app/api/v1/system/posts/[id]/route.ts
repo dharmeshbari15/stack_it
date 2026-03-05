@@ -7,8 +7,9 @@ import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, forbidden, notFound, unauthorized } from '@/lib/api-handler';
 import { auth } from '@/auth';
 import { NextRequest } from 'next/server';
+import { MessageResponse } from '@/types/api';
 
-export const DELETE = apiHandler(async (req: NextRequest, { params }) => {
+export const DELETE = apiHandler<{ id: string }, MessageResponse>(async (req: NextRequest, { params }) => {
     // 1. Authentication Check
     const session = await auth();
     if (!session?.user) {

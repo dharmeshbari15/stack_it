@@ -5,11 +5,12 @@
 // Expects: { title, description, tags: ["tag1"] }
 
 import { z } from 'zod';
-import DOMPurify from 'isomorphic-dompurify';
 import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, badRequest, unauthorized } from '@/lib/api-handler';
 import { parseBody } from '@/lib/validate';
 import { auth } from '@/auth';
+import { sanitizeHtml, isValidContent } from '@/lib/sanitizer';
+import { CreateQuestionResponse, QuestionsResponse } from '@/types/api';
 
 // ─── Request Schema ───────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ const createQuestionSchema = z.object({
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
-export const POST = apiHandler(async (req) => {
+export const POST = apiHandler<any, CreateQuestionResponse>(async (req) => {
     // 1. Authentication Check
     const session = await auth();
     if (!session?.user?.id) {
@@ -48,11 +49,9 @@ export const POST = apiHandler(async (req) => {
     const uniqueTags = [...new Set(tags)];
 
     // 3. XSS Sanitization
-    // Use DOMPurify to strip any malicious <script> or event handler attributes
-    const sanitizedDescription = DOMPurify.sanitize(description);
+    const sanitizedDescription = sanitizeHtml(description);
 
-    // Refuse empty output generated from purely malicious payload
-    if (!sanitizedDescription || sanitizedDescription.trim() === '') {
+    if (!isValidContent(sanitizedDescription)) {
         throw badRequest('Description contains invalid or unsafe content.');
     }
 
@@ -111,7 +110,7 @@ const getQuestionsQuerySchema = z.object({
     tag: z.string().optional(),
 });
 
-export const GET = apiHandler(async (req) => {
+export const GET = apiHandler<any, QuestionsResponse>(async (req) => {
     try {
         // 1. Parse URL Query Parameters
         const { searchParams } = new URL(req.url);

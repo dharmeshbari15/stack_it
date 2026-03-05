@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { apiHandler } from '@/lib/api-handler';
+import { apiHandler, apiSuccess, notFound } from '@/lib/api-handler';
+import { UserStats } from '@/types/api';
 
-export const GET = apiHandler(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = apiHandler<{ id: string }, UserStats>(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id: userId } = await params;
 
     const user = await prisma.user.findUnique({
@@ -21,17 +22,8 @@ export const GET = apiHandler(async (req: NextRequest, { params }: { params: Pro
     });
 
     if (!user) {
-        return {
-            status: 404,
-            body: { error: { message: 'User not found' } }
-        };
+        throw notFound('User');
     }
 
-    return {
-        status: 200,
-        body: {
-            success: true,
-            data: user
-        }
-    };
+    return apiSuccess(user as UserStats);
 });

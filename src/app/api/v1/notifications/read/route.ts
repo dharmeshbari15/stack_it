@@ -1,21 +1,19 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { apiHandler } from '@/lib/api-handler';
+import { apiHandler, apiSuccess, unauthorized } from '@/lib/api-handler';
+import { MarkReadResponse } from '@/types/api';
 import * as z from 'zod';
 
 const readSchema = z.object({
     notificationIds: z.array(z.string()).optional(),
 });
 
-export const PATCH = apiHandler(async (req: NextRequest) => {
+export const PATCH = apiHandler<any, MarkReadResponse>(async (req: NextRequest) => {
     const session = await auth();
 
     if (!session?.user) {
-        return {
-            status: 401,
-            body: { error: { message: 'Authentication required' } }
-        };
+        throw unauthorized();
     }
 
     // Parse body if it exists, otherwise default to empty object
@@ -47,13 +45,7 @@ export const PATCH = apiHandler(async (req: NextRequest) => {
         },
     });
 
-    return {
-        status: 200,
-        body: {
-            success: true,
-            data: {
-                updatedCount: count,
-            }
-        }
-    };
+    return apiSuccess({
+        updatedCount: count,
+    });
 });
