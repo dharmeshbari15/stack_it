@@ -76,11 +76,11 @@
 - [x] Create endpoint: `POST /api/v1/answers/[id]/vote` (Handle upvote/downvote logic, prevent duplicate votes, update score).
 
 ### Frontend
-- [ ] Build "Post Answer" form component with TipTap editor beneath the Question Detail view.
-- [ ] Build Answer List component to iterate over and display responses.
-- [ ] Implement UI for Upvote/Downvote buttons (triggering React Query mutation and optimistic UI update).
-- [ ] Implement "Accept Answer" button UI (visible only to question author).
-- [ ] Build visual treatment (e.g., green checkmark/border) for rendering an accepted answer.
+- [x] Build "Post Answer" form component with TipTap editor beneath the Question Detail view.
+- [x] Build Answer List component to iterate over and display responses.
+- [x] Implement UI for Upvote/Downvote buttons (triggering React Query mutation and optimistic UI update).
+- [x] Implement "Accept Answer" button UI (visible only to question author).
+- [x] Build visual treatment (e.g., green checkmark/border) for rendering an accepted answer.
 
 ---
 

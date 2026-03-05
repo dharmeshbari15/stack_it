@@ -1,20 +1,18 @@
-// app/api/v1/questions/[id]/route.ts
-// GET /api/v1/questions/[id]
-//
-// Fetches a single question by ID with relations: Author, Tags, and Answers.
-
 import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, notFound } from '@/lib/api-handler';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 
 export const GET = apiHandler(async (req: NextRequest, { params }) => {
     const { id } = await params;
+    const session = await auth();
+    const currentUserId = session?.user?.id;
 
     try {
         const question = await prisma.question.findUnique({
             where: {
                 id: id,
-                deleted_at: null, // Only fetch active questions
+                deleted_at: null,
             },
             include: {
                 author: {
@@ -30,7 +28,7 @@ export const GET = apiHandler(async (req: NextRequest, { params }) => {
                 },
                 answers: {
                     where: {
-                        deleted_at: null, // Only fetch active answers
+                        deleted_at: null,
                     },
                     orderBy: [
                         { score: 'desc' },
@@ -43,6 +41,11 @@ export const GET = apiHandler(async (req: NextRequest, { params }) => {
                                 username: true,
                             },
                         },
+                        votes: currentUserId ? {
+                            where: {
+                                user_id: currentUserId,
+                            },
+                        } : false,
                     },
                 },
             },
@@ -52,7 +55,6 @@ export const GET = apiHandler(async (req: NextRequest, { params }) => {
             throw notFound('Question');
         }
 
-        // Format the response to match the expected schema
         const formattedQuestion = {
             id: question.id,
             title: question.title,
@@ -73,6 +75,7 @@ export const GET = apiHandler(async (req: NextRequest, { params }) => {
                     id: a.author.id,
                     username: a.author.username,
                 },
+                userVote: a.votes?.[0]?.value || 0,
             })),
         };
 
