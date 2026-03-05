@@ -71,9 +71,9 @@
 ## 5. Feature: Answers & Interactions
 
 ### Backend
-- [ ] Create endpoint: `POST /api/v1/questions/[id]/answers` (Sanitize HTML, insert answer).
-- [ ] Create endpoint: `PATCH /api/v1/questions/[id]/accept-answer` (Verify question owner, update DB flag).
-- [ ] Create endpoint: `POST /api/v1/answers/[id]/vote` (Handle upvote/downvote logic, prevent duplicate votes, update score).
+- [x] Create endpoint: `POST /api/v1/questions/[id]/answers` (Sanitize HTML, insert answer).
+- [x] Create endpoint: `PATCH /api/v1/questions/[id]/accept-answer` (Verify question owner, update DB flag).
+- [x] Create endpoint: `POST /api/v1/answers/[id]/vote` (Handle upvote/downvote logic, prevent duplicate votes, update score).
 
 ### Frontend
 - [ ] Build "Post Answer" form component with TipTap editor beneath the Question Detail view.

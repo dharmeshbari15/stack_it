@@ -73,10 +73,10 @@ export function apiError(error: ApiError): NextResponse {
 
 // ─── Route Handler Wrapper ────────────────────────────────────────────────────
 
-type RouteHandler = (
+type RouteHandler<T = any> = (
     req: NextRequest,
-    context: { params: Promise<Record<string, string>> },
-) => Promise<NextResponse>;
+    context: { params: Promise<T> },
+) => Promise<any>;
 
 /**
  * Wraps a Next.js App Router route handler with standardized error handling.
