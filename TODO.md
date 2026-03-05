@@ -1,15 +1,15 @@
 # Project TODO: StackIt MVP
 
 ## 1. Project Setup
-- [ ] Initialize GitHub repository (public/private).
-- [ ] Initialize Next.js App Router project (`npx create-next-app@latest`).
-- [ ] Configure Tailwind CSS during Next.js setup.
-- [ ] Setup ESLint and Prettier for code formatting.
-- [ ] Initialize Supabase project via the Supabase Dashboard.
-- [ ] Configure local environment variables (`.env.local`) with Supabase database connection strings.
-- [ ] Initialize Prisma in the project (`npx prisma init`).
-- [ ] Connect Vercel to the GitHub repository for automatic deployments.
-- [ ] Add Vercel Environment Variables matching local `.env`.
+- [x] Initialize GitHub repository (public/private).
+- [x] Initialize Next.js App Router project (`npx create-next-app@latest`).
+- [x] Configure Tailwind CSS during Next.js setup.
+- [x] Setup ESLint and Prettier for code formatting.
+- [x] Initialize Supabase project via the Supabase Dashboard.
+- [x] Configure local environment variables (`.env.local`) with Supabase database connection strings.
+- [x] Initialize Prisma in the project (`npx prisma init`).
+- [x] Connect Vercel to the GitHub repository for automatic deployments.
+- [x] Add Vercel Environment Variables matching local `.env`.
 
 ---
 

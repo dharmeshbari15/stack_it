@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  GUEST
+  USER
+  ADMIN
+}
+
+enum NotificationType {
+  ANSWER
+  MENTION
+  SYSTEM
+}
+
+model User {
+  id            String         @id @default(uuid())
+  username      String         @unique @db.VarChar(255)
+  email         String         @unique @db.VarChar(255)
+  password_hash String         @db.VarChar(255)
+  role          Role           @default(USER)
+  created_at    DateTime       @default(now())
+  questions     Question[]
+  answers       Answer[]
+  votes         Vote[]
+  notifications Notification[] @relation("UserNotifications")
+  acted_upon    Notification[] @relation("ActorNotifications")
+
+  @@index([username])
+  @@index([email])
+}
+
+model Question {
+  id                 String        @id @default(uuid())
+  title              String        @db.VarChar(255)
+  description        String        @db.Text
+  accepted_answer_id String?
+  created_at         DateTime      @default(now())
+  deleted_at         DateTime?
+  author_id          String
+  author             User          @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  answers            Answer[]
+  tags               QuestionTag[]
+
+  @@index([created_at])
+}
+
+model Answer {
+  id          String    @id @default(uuid())
+  body        String    @db.Text
+  score       Int       @default(0)
+  created_at  DateTime  @default(now())
+  deleted_at  DateTime?
+  question_id String
+  author_id   String
+  question    Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  author      User      @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  votes       Vote[]
+
+  @@index([question_id])
+  @@index([score])
+}
+
+model Tag {
+  id        String        @id @default(uuid())
+  name      String        @unique @db.VarChar(255)
+  questions QuestionTag[]
+
+  @@index([name])
+}
+
+model QuestionTag {
+  question_id String
+  tag_id      String
+  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  tag         Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([question_id, tag_id])
+  @@index([tag_id])
+}
+
+model Vote {
+  user_id   String
+  answer_id String
+  value     Int      @db.SmallInt
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  answer    Answer   @relation(fields: [answer_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, answer_id])
+}
+
+model Notification {
+  id           String           @id @default(uuid())
+  type         NotificationType
+  reference_id String
+  is_read      Boolean          @default(false)
+  created_at   DateTime         @default(now())
+  user_id      String
+  actor_id     String
+  user         User             @relation("UserNotifications", fields: [user_id], references: [id], onDelete: Cascade)
+  actor        User             @relation("ActorNotifications", fields: [actor_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, is_read])
+}
