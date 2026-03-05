@@ -16,12 +16,12 @@
 ## 2. Core Architecture
 
 ### Database (Prisma & Supabase)
-- [ ] Define `User` schema model in `schema.prisma`.
-- [ ] Define `Question`, `Answer`, and `Tag` schema models.
-- [ ] Define `QuestionTag` junction model for M:N relationships.
-- [ ] Define `Vote` and `Notification` schema models.
-- [ ] Generate initial database migration (`npx prisma migrate dev --name init`).
-- [ ] Add database indexes on `Tag(name)`, `Question(created_at)`, `Vote(composite pk)`, and `Notification(user_id)`.
+- [x] Define `User` schema model in `schema.prisma`.
+- [x] Define `Question`, `Answer`, and `Tag` schema models.
+- [x] Define `QuestionTag` junction model for M:N relationships.
+- [x] Define `Vote` and `Notification` schema models.
+- [x] Generate initial database migration (`npx prisma migrate dev --name init`).
+- [x] Add database indexes on `Tag(name)`, `Question(created_at)`, `Vote(composite pk)`, and `Notification(user_id)`.
 
 ### Backend Infrastructure (Next.js API Routes)
 - [ ] Setup global Prisma Client singleton for API route database access.
