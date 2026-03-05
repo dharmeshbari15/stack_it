@@ -39,9 +39,9 @@
 
 ### Backend
 - [x] Configure `NextAuth.js` (`auth.ts` / `app/api/auth/[...nextauth]/route.ts`).
-- [ ] Implement Credentials Provider (Email/Password) within NextAuth.
-- [ ] Write bcrypt password hashing logic for user registration endpoint (`POST /api/v1/auth/register`).
-- [ ] Implement JWT configuration for stateless session management in NextAuth.
+- [x] Implement Credentials Provider (Email/Password) within NextAuth.
+- [x] Write bcrypt password hashing logic for user registration endpoint (`POST /api/v1/auth/register`).
+- [x] Implement JWT configuration for stateless session management in NextAuth.
 
 ### Frontend
 - [ ] Build Login UI screen/modal (`/login`).
