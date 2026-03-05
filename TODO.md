@@ -25,7 +25,7 @@
 
 ### Backend Infrastructure (Next.js API Routes)
 - [x] Setup global Prisma Client singleton for API route database access.
-- [ ] Create standardized API error handler wrapper/utility function.
+- [x] Create standardized API error handler wrapper/utility function.
 - [ ] Configure Zod schema validation utility for incoming REST requests.
 
 ### Frontend Infrastructure
