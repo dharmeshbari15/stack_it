@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import QueryProvider from '@/components/QueryProvider';
 
 // Inter is the closest match to the clean sans-serif used in the UI designs.
 const inter = Inter({
@@ -38,11 +39,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-gray-50 font-sans antialiased">
-        {/* Global navigation bar — present on every page */}
-        <Navbar />
-
-        {/* Main page content */}
-        <main>{children}</main>
+        <QueryProvider>
+          {/* Global navigation bar — present on every page */}
+          <Navbar />
+          {/* Main page content */}
+          <main>{children}</main>
+        </QueryProvider>
       </body>
     </html>
   );
