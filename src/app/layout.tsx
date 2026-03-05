@@ -1,14 +1,14 @@
 // app/layout.tsx
 // Root layout for the StackIt Next.js App Router application.
-// Wraps every page with shared metadata, fonts, global styles, and the Navbar.
 
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import QueryProvider from '@/components/QueryProvider';
+import SessionProvider from '@/components/SessionProvider';
+import { auth } from '@/auth';
 
-// Inter is the closest match to the clean sans-serif used in the UI designs.
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
@@ -31,20 +31,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Fetch the session server-side and pass it to SessionProvider so client
+  // components get the session instantly without a loading state on first render.
+  const session = await auth();
+
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-gray-50 font-sans antialiased">
-        <QueryProvider>
-          {/* Global navigation bar — present on every page */}
-          <Navbar />
-          {/* Main page content */}
-          <main>{children}</main>
-        </QueryProvider>
+        <SessionProvider session={session}>
+          <QueryProvider>
+            {/* Global navigation bar — present on every page */}
+            <Navbar />
+            {/* Main page content */}
+            <main>{children}</main>
+          </QueryProvider>
+        </SessionProvider>
       </body>
     </html>
   );
