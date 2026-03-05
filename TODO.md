@@ -55,9 +55,9 @@
 
 ### Backend
 - [x] Create endpoint: `POST /api/v1/questions` (Validate tags array, sanitize HTML, insert into DB).
-- [ ] Create endpoint: `GET /api/v1/questions` (Implement pagination and tag filtering).
-- [ ] Create endpoint: `GET /api/v1/questions/[id]` (Fetch question with relations: Author, Tags, Answers).
-- [ ] Create endpoint: `DELETE /api/v1/system/posts/[id]` (Admin soft delete logic via `deleted_at`).
+- [x] Create endpoint: `GET /api/v1/questions` (Implement pagination and tag filtering).
+- [x] Create endpoint: `GET /api/v1/questions/[id]` (Fetch question with relations: Author, Tags, Answers).
+- [x] Create endpoint: `DELETE /api/v1/system/posts/[id]` (Admin soft delete logic via `deleted_at`).
 
 ### Frontend
 - [ ] Build Home/Feed page (`/`) displaying paginated list of active questions.
