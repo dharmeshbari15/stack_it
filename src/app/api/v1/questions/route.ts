@@ -163,7 +163,11 @@ export const GET = apiHandler<any, QuestionsResponse>(async (req) => {
                         },
                     },
                     _count: {
-                        select: { answers: true },
+                        select: {
+                            answers: {
+                                where: { deleted_at: null }
+                            }
+                        },
                     },
                 },
             }),

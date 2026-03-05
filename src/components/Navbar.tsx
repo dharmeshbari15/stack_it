@@ -16,27 +16,45 @@ import { User, LogOut, ChevronDown, Settings } from 'lucide-react';
 
 function StackItLogo() {
     return (
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-            {/* Diamond logo mark */}
-            <svg
-                width="28"
-                height="28"
-                viewBox="0 0 28 28"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-            >
-                <rect
-                    x="4"
-                    y="4"
-                    width="12"
-                    height="12"
-                    rx="2"
-                    fill="#2563EB"
-                    transform="rotate(45 14 4)"
-                />
-            </svg>
-            <span className="text-lg font-bold text-gray-900 tracking-tight">
+        <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            {/* Multi-layered stack logo mark */}
+            <div className="relative h-8 w-8 flex items-center justify-center">
+                <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="transition-transform group-hover:scale-110 duration-300"
+                >
+                    {/* Bottom Layer */}
+                    <path
+                        d="M4 16L12 20L20 16"
+                        stroke="#DBEAFE"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                    {/* Middle Layer */}
+                    <path
+                        d="M4 12L12 16L20 12"
+                        stroke="#60A5FA"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                    {/* Top Layer (Solid) */}
+                    <path
+                        d="M12 4L4 8L12 12L20 8L12 4Z"
+                        fill="#2563EB"
+                        stroke="#2563EB"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            </div>
+            <span className="text-xl font-black text-gray-900 tracking-tighter group-hover:text-blue-600 transition-colors">
                 StackIt
             </span>
         </Link>

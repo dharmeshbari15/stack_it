@@ -99,11 +99,27 @@ export interface MarkReadResponse {
 export interface UserStats {
     id: string;
     username: string;
+    email?: string;
+    two_factor_enabled?: boolean;
     created_at: string | Date;
     _count: {
         questions: number;
         answers: number;
     };
+}
+
+export interface UpdateUserRequest {
+    username?: string;
+    email?: string;
+    password?: string;
+    two_factor_enabled?: boolean;
+}
+
+export interface UpdateUserResponse {
+    id: string;
+    username: string;
+    email: string;
+    two_factor_enabled: boolean;
 }
 
 export interface UserPost {
