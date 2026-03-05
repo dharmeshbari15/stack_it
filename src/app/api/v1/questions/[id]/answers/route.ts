@@ -27,7 +27,7 @@ export const POST = apiHandler(async (
     // 1. Verify question exists and is not soft-deleted
     const question = await prisma.question.findUnique({
         where: { id: questionId },
-        select: { id: true, deleted_at: true }
+        select: { id: true, deleted_at: true, author_id: true }
     });
 
     if (!question || question.deleted_at) {
@@ -51,21 +51,37 @@ export const POST = apiHandler(async (
     // 3. Sanitize HTML body
     const sanitizedBody = DOMPurify.sanitize(result.data.body);
 
-    // 4. Create answer
-    const answer = await prisma.answer.create({
-        data: {
-            body: sanitizedBody,
-            question_id: questionId,
-            author_id: session.user.id,
-        },
-        include: {
-            author: {
-                select: {
-                    id: true,
-                    username: true,
+    // 4. Create answer and notification in a transaction for atomicity
+    const answer = await prisma.$transaction(async (tx) => {
+        const newAnswer = await tx.answer.create({
+            data: {
+                body: sanitizedBody,
+                question_id: questionId,
+                author_id: session.user.id,
+            },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        username: true,
+                    }
                 }
             }
+        });
+
+        // 5. Create notification for question author (if not same user)
+        if (question.author_id !== session.user.id) {
+            await tx.notification.create({
+                data: {
+                    type: 'ANSWER',
+                    reference_id: newAnswer.id,
+                    user_id: question.author_id,
+                    actor_id: session.user.id,
+                }
+            });
         }
+
+        return newAnswer;
     });
 
     return {

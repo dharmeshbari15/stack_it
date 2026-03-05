@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Editor } from './Editor';
+import { toast } from '@/lib/events';
 
 const answerSchema = z.object({
     body: z.string().min(30, 'Answer must be at least 30 characters long'),
@@ -19,7 +20,6 @@ interface PostAnswerFormProps {
 
 export function PostAnswerForm({ questionId }: PostAnswerFormProps) {
     const queryClient = useQueryClient();
-    const [error, setError] = useState<string | null>(null);
 
     const {
         handleSubmit,
@@ -45,17 +45,16 @@ export function PostAnswerForm({ questionId }: PostAnswerFormProps) {
 
             const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.error?.message || 'Failed to post answer');
+                const msg = data.error?.message || 'Failed to post answer';
+                toast.error(msg);
+                throw new Error(msg);
             }
             return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['question', questionId] });
             reset();
-            setError(null);
-        },
-        onError: (err) => {
-            setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+            toast.success('Your answer has been published!');
         },
     });
 
@@ -68,12 +67,6 @@ export function PostAnswerForm({ questionId }: PostAnswerFormProps) {
             <h2 className="text-2xl font-bold text-gray-900">Your Answer</h2>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                {error && (
-                    <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">
-                        {error}
-                    </div>
-                )}
-
                 <div className="min-h-[300px]">
                     <Controller
                         name="body"

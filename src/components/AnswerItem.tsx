@@ -3,6 +3,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
+import { toast } from '@/lib/events';
 
 interface Author {
     id: string;
@@ -43,9 +44,12 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'Failed to accept answer');
+                const msg = errorData.error?.message || 'Failed to accept answer';
+                toast.error(msg);
+                throw new Error(msg);
             }
 
+            toast.success('Solution marked successfully!');
             return response.json();
         },
         onMutate: async () => {
@@ -89,9 +93,12 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'Voting failed');
+                const msg = errorData.error?.message || 'Voting failed';
+                toast.error(msg);
+                throw new Error(msg);
             }
 
+            toast.success('Vote recorded');
             return response.json();
         },
         onMutate: async (newValue) => {
