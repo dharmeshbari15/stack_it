@@ -1,26 +1,44 @@
 // lib/prisma.ts
-// Prisma Client singleton for Next.js API routes.
+// Prisma Client singleton for Next.js API routes — Prisma 7 compatible.
 //
-// Next.js hot-reload re-evaluates modules on every change in development,
-// creating a new PrismaClient instance each time and exhausting the DB
-// connection pool quickly. We persist the instance on the global object
-// during development; in production modules are only evaluated once anyway.
+// Prisma 7 uses the new "client" engine type which requires a driver adapter
+// instead of the legacy Rust query engine binary. We use @prisma/adapter-pg
+// with a pg Pool, configured with the pooled connection URL (pgBouncer).
+//
+// The singleton pattern prevents connection pool exhaustion during Next.js
+// hot-reloads in development, while production modules are only evaluated once.
 
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 declare global {
-    // eslint-disable-next-line no-var
+
     var prisma: PrismaClient | undefined;
 }
 
-export const prisma: PrismaClient =
-    global.prisma ??
-    new PrismaClient({
+function createPrismaClient(): PrismaClient {
+    // Use the pooled connection URL for runtime queries
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+        throw new Error('DATABASE_URL environment variable is not set.');
+    }
+
+    const pool = new Pool({ connectionString });
+    // @ts-expect-error - pg.Pool does not perfectly align with neon.Pool required by adapter
+    const adapter = new PrismaPg(pool);
+
+
+    return new PrismaClient({
+        adapter,
         log:
             process.env.NODE_ENV === 'development'
                 ? ['query', 'error', 'warn']
                 : ['error'],
     });
+}
+
+export const prisma: PrismaClient = global.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
     global.prisma = prisma;
