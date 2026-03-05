@@ -94,9 +94,9 @@
 - [x] Create endpoint: `PATCH /api/v1/notifications/read` (Mark notifications as read).
 
 ### Frontend
-- [ ] Build Notification Bell icon component in global Navigation Bar.
-- [ ] Implement React Query polling (e.g., every 30s) or periodic fetch for unread notification count.
-- [ ] Build Notification Dropdown UI displaying the latest alerts and linking to specific threads.
+- [x] Build Notification Bell icon component in global Navigation Bar.
+- [x] Implement React Query polling (e.g., every 30s) or periodic fetch for unread notification count.
+- [x] Build Notification Dropdown UI displaying the latest alerts and linking to specific threads.
 
 ---
 

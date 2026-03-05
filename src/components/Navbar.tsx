@@ -8,6 +8,7 @@
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import { NotificationBell } from './NotificationBell';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -141,15 +142,8 @@ export default function Navbar() {
                 <div className="ml-auto flex items-center gap-3">
                     {isLoggedIn ? (
                         <>
-                            {/* Notification bell — badge wired up in the notifications feature task */}
-                            <button
-                                id="navbar-notifications"
-                                aria-label="View notifications"
-                                className="relative rounded-full p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
-                            >
-                                <BellIcon />
-                                <span className="absolute right-0.5 top-0.5 flex h-2 w-2 rounded-full bg-red-500" />
-                            </button>
+                            {/* Notification bell — reactive with unread count */}
+                            <NotificationBell />
 
                             {/* User avatar — click to sign out (profile menu added in later task) */}
                             <button
