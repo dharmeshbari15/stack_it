@@ -17,35 +17,28 @@ export const GET = apiHandler(async (req) => {
 
     const skip = (page - 1) * limit;
 
-    const [users, totalCount] = await Promise.all([
-        prisma.user.findMany({
-            take: limit,
-            skip,
-            select: {
-                id: true,
-                username: true,
-                created_at: true,
-                _count: {
-                    select: {
-                        questions: true,
-                        answers: true
-                    }
-                }
-            },
-            orderBy: {
-                created_at: 'desc'
-            }
-        }),
-        prisma.user.count()
-    ]);
+    // Use raw SQL to accurately count active questions and answers
+    const users = await prisma.$queryRaw<any[]>`
+        SELECT 
+            u.id, 
+            u.username, 
+            u.created_at,
+            (SELECT CAST(COUNT(*) AS INTEGER) FROM "Question" q WHERE q.author_id = u.id AND q.deleted_at IS NULL) as "question_count",
+            (SELECT CAST(COUNT(*) AS INTEGER) FROM "Answer" a WHERE a.author_id = u.id AND a.deleted_at IS NULL) as "answer_count"
+        FROM "User" u
+        ORDER BY u.created_at DESC
+        LIMIT ${limit} OFFSET ${skip}
+    `;
+
+    const totalCount = await prisma.user.count();
 
     const formattedUsers = users.map(u => ({
         id: u.id,
         username: u.username,
         created_at: u.created_at,
-        questionCount: u._count.questions,
-        answerCount: u._count.answers,
-        totalContributions: u._count.questions + u._count.answers
+        questionCount: u.question_count,
+        answerCount: u.answer_count,
+        totalContributions: u.question_count + u.answer_count
     }));
 
     return apiSuccess({

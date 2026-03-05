@@ -2,6 +2,10 @@
 
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { useSession } from 'next-auth/react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Trash2, Edit2 } from 'lucide-react';
+import { toast } from '@/lib/events';
 
 interface Author {
     id: string;
@@ -24,24 +28,78 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({ question }: QuestionCardProps) {
+    const { data: session } = useSession();
+    const queryClient = useQueryClient();
+    const isAuthor = session?.user?.id === question.author.id;
+
+    const deleteMutation = useMutation({
+        mutationFn: async () => {
+            const res = await fetch(`/api/v1/questions/${question.id}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error?.message || 'Failed to delete question');
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            toast.success('Question deleted successfully');
+            queryClient.invalidateQueries({ queryKey: ['questions'] });
+        },
+        onError: (error: any) => {
+            toast.error(error.message);
+        },
+    });
+
+    const handleDelete = () => {
+        if (confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
+            deleteMutation.mutate();
+        }
+    };
+
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow relative group">
             <div className="flex flex-col gap-4">
                 <div className="flex justify-between items-start gap-4">
-                    <Link
-                        href={`/questions/${question.id}`}
-                        className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2"
-                    >
-                        {question.title}
-                    </Link>
-                    {question.accepted_answer_id && (
-                        <span className="flex-shrink-0 inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-                            <svg className="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Solved
-                        </span>
-                    )}
+                    <div className="flex-1 flex flex-col gap-1">
+                        <Link
+                            href={`/questions/${question.id}`}
+                            className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2"
+                        >
+                            {question.title}
+                        </Link>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {isAuthor && (
+                            <button
+                                onClick={handleDelete}
+                                disabled={deleteMutation.isPending}
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                title="Delete Question"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        )}
+                        {isAuthor && (
+                            <Link
+                                href={`/questions/${question.id}`}
+                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                title="Edit Question"
+                            >
+                                <Edit2 className="h-4 w-4" />
+                            </Link>
+                        )}
+                        {question.accepted_answer_id && (
+                            <span className="flex-shrink-0 inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                                <svg className="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Solved
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 <p className="text-gray-600 line-clamp-3 text-sm">

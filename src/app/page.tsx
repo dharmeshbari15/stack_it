@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { QuestionList } from '@/components/QuestionList';
+import { auth } from '@/auth';
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+  const isLoggedIn = !!session?.user;
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-3.5rem)]">
       {/* Hero Section */}
@@ -25,10 +29,10 @@ export default function Home() {
             Ask a Question
           </Link>
           <Link
-            href="/register"
+            href={isLoggedIn ? "/users" : "/register"}
             className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-white text-gray-900 font-semibold ring-1 ring-inset ring-gray-200 shadow-sm hover:bg-gray-50 transition-all active:scale-95"
           >
-            Join Community
+            {isLoggedIn ? "Go to Community" : "Join Community"}
           </Link>
         </div>
       </section>

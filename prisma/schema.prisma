@@ -8,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  username      String         @unique @db.VarChar(255)
-  email         String         @unique @db.VarChar(255)
-  password_hash String         @db.VarChar(255)
-  role          Role           @default(USER)
-  created_at    DateTime       @default(now())
-  answers       Answer[]
-  acted_upon    Notification[] @relation("ActorNotifications")
-  notifications Notification[] @relation("UserNotifications")
-  questions     Question[]
-  votes         Vote[]
+  id                 String         @id @default(uuid())
+  username           String         @unique @db.VarChar(255)
+  email              String         @unique @db.VarChar(255)
+  password_hash      String         @db.VarChar(255)
+  role               Role           @default(USER)
+  two_factor_enabled Boolean        @default(false)
+  created_at         DateTime       @default(now())
+  answers            Answer[]
+  acted_upon         Notification[] @relation("ActorNotifications")
+  notifications      Notification[] @relation("UserNotifications")
+  questions          Question[]
+  votes              Vote[]
 
   @@index([username])
   @@index([email])

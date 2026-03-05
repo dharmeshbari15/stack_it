@@ -3,8 +3,11 @@ import DOMPurify from 'isomorphic-dompurify';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { toast } from '@/lib/events';
+import { Trash2, Edit2, X, Check } from 'lucide-react';
 import { AnswerListItem } from '@/types/api';
+import { Editor } from './Editor';
 
 interface AnswerItemProps {
     answer: AnswerListItem;
@@ -17,9 +20,67 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
     const { id: questionId } = useParams();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const [isEditing, setIsEditing] = useState(false);
+    const [editBody, setEditBody] = useState(answer.body);
     const sanitizedBody = DOMPurify.sanitize(answer.body);
 
     const isQuestionAuthor = session?.user?.id === questionAuthorId;
+    const isAnswerAuthor = session?.user?.id === answer.author.id;
+
+    const updateMutation = useMutation({
+        mutationFn: async (body: string) => {
+            const response = await fetch(`/api/v1/answers/${answer.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                const msg = errorData.error?.message || 'Failed to update answer';
+                toast.error(msg);
+                throw new Error(msg);
+            }
+
+            toast.success('Answer updated successfully');
+            return response.json();
+        },
+        onSuccess: () => {
+            setIsEditing(false);
+            queryClient.invalidateQueries({ queryKey: ['question', questionId] });
+        },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async () => {
+            const response = await fetch(`/api/v1/answers/${answer.id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                const msg = errorData.error?.message || 'Failed to delete answer';
+                toast.error(msg);
+                throw new Error(msg);
+            }
+
+            toast.success('Answer deleted successfully');
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['question', questionId] });
+        },
+    });
+
+    const handleDelete = () => {
+        if (confirm('Are you sure you want to delete this answer?')) {
+            deleteMutation.mutate();
+        }
+    };
+
+    const handleUpdate = () => {
+        updateMutation.mutate(editBody);
+    };
 
     const acceptMutation = useMutation({
         mutationFn: async () => {
@@ -196,10 +257,39 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
                 </div>
 
                 <div className="flex-1 flex flex-col gap-6">
-                    <div
-                        className="prose prose-sm sm:prose-base max-w-none text-gray-800 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-                    />
+                    {isEditing ? (
+                        <div className="space-y-4">
+                            <Editor
+                                content={editBody}
+                                onChange={setEditBody}
+                            />
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        setEditBody(answer.body);
+                                    }}
+                                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2"
+                                >
+                                    <X className="w-4 h-4" />
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleUpdate}
+                                    disabled={updateMutation.isPending || editBody.length < 30}
+                                    className="px-6 py-2 bg-blue-600 text-white text-sm font-black rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-100 flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    <Check className="w-4 h-4" />
+                                    Update Answer
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            className="prose prose-sm sm:prose-base max-w-none text-gray-800 leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+                        />
+                    )}
 
                     <div className="flex flex-wrap items-center justify-end gap-6 pt-4 border-t border-gray-100/50">
                         <div className="text-xs font-medium text-gray-400">
@@ -215,6 +305,28 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
                                 <span className="text-sm font-bold text-gray-900">@{answer.author.username}</span>
                             </div>
                         </div>
+
+                        {isAnswerAuthor && !isEditing && (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                                    title="Edit Answer"
+                                >
+                                    <Edit2 className="h-4 w-4" />
+                                    <span>Edit</span>
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={deleteMutation.isPending}
+                                    className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                    title="Delete Answer"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

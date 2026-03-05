@@ -1,11 +1,13 @@
 'use client';
 
 import React from 'react';
-import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useParams, useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Calendar, MessageSquare, HelpCircle, User as UserIcon, Trophy } from 'lucide-react';
+import { Calendar, MessageSquare, HelpCircle, User as UserIcon, Trophy, Trash2, Edit2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { toast } from '@/lib/events';
 
 interface UserData {
     id: string;
@@ -32,7 +34,12 @@ interface Post {
 
 export default function UserProfilePage() {
     const { id: userId } = useParams();
+    const router = useRouter();
+    const queryClient = useQueryClient();
+    const { data: session } = useSession();
     const [activeTab, setActiveTab] = React.useState<'all' | 'questions' | 'answers'>('all');
+
+    const isOwnProfile = session?.user?.id === userId;
 
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['user', userId],
@@ -53,6 +60,34 @@ export default function UserProfilePage() {
             return result.data as Post[];
         }
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: async ({ id, type }: { id: string, type: 'QUESTION' | 'ANSWER' }) => {
+            const endpoint = type === 'QUESTION' ? `/api/v1/questions/${id}` : `/api/v1/answers/${id}`;
+            const res = await fetch(endpoint, { method: 'DELETE' });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error?.message || `Failed to delete ${type.toLowerCase()}`);
+            }
+            return res.json();
+        },
+        onSuccess: (_, variables) => {
+            toast.success(`${variables.type === 'QUESTION' ? 'Question' : 'Answer'} deleted successfully`);
+            queryClient.invalidateQueries({ queryKey: ['user-posts', userId] });
+            queryClient.invalidateQueries({ queryKey: ['user', userId] });
+        },
+        onError: (error: any) => {
+            toast.error(error.message);
+        }
+    });
+
+    const handleDelete = (e: React.MouseEvent, id: string, type: 'QUESTION' | 'ANSWER') => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm(`Are you sure you want to delete this ${type.toLowerCase()}? This action cannot be undone.`)) {
+            deleteMutation.mutate({ id, type });
+        }
+    };
 
     if (userLoading) {
         return (
@@ -119,7 +154,7 @@ export default function UserProfilePage() {
                         </div>
                     </div>
 
-                    <div className="shrink-0 w-full md:w-auto">
+                    <div className="shrink-0 w-full md:w-auto text-center md:text-right flex flex-col gap-2">
                         <button
                             onClick={() => {
                                 navigator.clipboard.writeText(window.location.href);
@@ -129,6 +164,14 @@ export default function UserProfilePage() {
                         >
                             Share Profile
                         </button>
+                        {isOwnProfile && (
+                            <Link
+                                href="/settings"
+                                className="text-xs font-bold text-gray-400 hover:text-blue-600 transition-colors"
+                            >
+                                Edit Profile Settings
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>
@@ -202,7 +245,7 @@ export default function UserProfilePage() {
                         ))
                     ) : filteredPosts.length > 0 ? (
                         filteredPosts.map((post) => (
-                            <div key={post.id} className="p-8 hover:bg-blue-50/30 transition-colors group">
+                            <div key={post.id} className="p-8 hover:bg-blue-50/30 transition-colors group relative">
                                 <div className="flex items-start gap-4">
                                     <div className={`
                                         p-2.5 rounded-xl shrink-0 mt-1
@@ -229,10 +272,10 @@ export default function UserProfilePage() {
                                             {post.title}
                                         </Link>
                                         <p className="text-gray-500 text-sm line-clamp-2 leading-relaxed">
-                                            {post.content}
+                                            {post.content.replace(/<[^>]*>/g, '')}
                                         </p>
                                     </div>
-                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                    <div className="flex flex-col items-end gap-4 shrink-0">
                                         {post.type === 'QUESTION' ? (
                                             <div className="text-right">
                                                 <p className="text-sm font-black text-gray-900 leading-tight">{post.metadata.answerCount}</p>
@@ -242,6 +285,26 @@ export default function UserProfilePage() {
                                             <div className="text-right">
                                                 <p className="text-sm font-black text-green-600 leading-tight">+{post.metadata.score}</p>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase">Score</p>
+                                            </div>
+                                        )}
+
+                                        {isOwnProfile && (
+                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Link
+                                                    href={`/questions/${post.type === 'QUESTION' ? post.id : post.metadata.questionId}${post.type === 'ANSWER' ? `#answer-${post.id}` : ''}`}
+                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                    title="Edit"
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </Link>
+                                                <button
+                                                    onClick={(e) => handleDelete(e, post.id, post.type)}
+                                                    disabled={deleteMutation.isPending}
+                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
                                             </div>
                                         )}
                                     </div>
