@@ -90,8 +90,8 @@ const MenuBar = ({ editor }: { editor: any }) => {
                     type="button"
                     onClick={btn.action}
                     className={`p-2 rounded-md transition-colors ${btn.isActive
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'hover:bg-gray-200 text-gray-600'
+                        ? 'bg-blue-100 text-blue-600'
+                        : 'hover:bg-gray-200 text-gray-600'
                         }`}
                     title={btn.title}
                 >
@@ -123,6 +123,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
 export function Editor({ content, onChange, placeholder }: EditorProps) {
     const editor = useEditor({
+        immediatelyRender: false,
         extensions: [
             StarterKit.configure({
                 codeBlock: false, // Disable default code block to use lowlight instead
