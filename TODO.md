@@ -29,7 +29,7 @@
 - [x] Configure Zod schema validation utility for incoming REST requests.
 
 ### Frontend Infrastructure
-- [ ] Setup standard layout component (`app/layout.tsx`) including global navigation bar.
+- [x] Setup standard layout component (`app/layout.tsx`) including global navigation bar.
 - [ ] Setup React Query Provider at the application root for client-side data fetching.
 - [ ] Create basic global loading state and error boundary components.
 
