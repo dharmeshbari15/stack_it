@@ -44,10 +44,10 @@
 - [x] Implement JWT configuration for stateless session management in NextAuth.
 
 ### Frontend
-- [ ] Build Login UI screen/modal (`/login`).
-- [ ] Build Registration UI screen/modal (`/register`).
-- [ ] Implement client-side session context using NextAuth `useSession()`.
-- [ ] Create protected route wrapper component for authenticated-only pages (e.g., `/ask`).
+- [x] Build Login UI screen/modal (`/login`).
+- [x] Build Registration UI screen/modal (`/register`).
+- [x] Implement client-side session context using NextAuth `useSession()`.
+- [x] Create protected route wrapper component for authenticated-only pages (e.g., `/ask`).
 
 ---
 

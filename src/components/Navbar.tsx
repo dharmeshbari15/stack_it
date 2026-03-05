@@ -2,10 +2,11 @@
 
 // components/Navbar.tsx
 // Global navigation bar matching the UI design (UI/Image 1.png and Image 3.png).
-// Renders: StackIt logo, nav links (Questions, Tags, Users),
-// notification bell (when logged in), Log In button / user avatar.
+// Session-aware: shows notification bell + user avatar for authenticated users,
+// Log In button for guests. Uses NextAuth useSession() for reactive updates.
 
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -99,9 +100,10 @@ function NavLink({ href, label }: { href: string; label: string }) {
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 export default function Navbar() {
-    // NOTE: `isLoggedIn` will be replaced with NextAuth `useSession()` in the
-    // authentication task. For now we treat the user as a guest on every page.
-    const isLoggedIn = false;
+    const { data: session, status } = useSession();
+    const isLoggedIn = status === 'authenticated';
+    // First letter of the username for the avatar initials
+    const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? '?';
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
@@ -139,25 +141,26 @@ export default function Navbar() {
                 <div className="ml-auto flex items-center gap-3">
                     {isLoggedIn ? (
                         <>
-                            {/* Notification bell — badge shown when there are unread notifications */}
+                            {/* Notification bell — badge wired up in the notifications feature task */}
                             <button
                                 id="navbar-notifications"
                                 aria-label="View notifications"
                                 className="relative rounded-full p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
                             >
                                 <BellIcon />
-                                {/* Unread badge — wired up in the notifications feature task */}
                                 <span className="absolute right-0.5 top-0.5 flex h-2 w-2 rounded-full bg-red-500" />
                             </button>
 
-                            {/* User avatar */}
+                            {/* User avatar — click to sign out (profile menu added in later task) */}
                             <button
                                 id="navbar-user-menu"
-                                aria-label="Open user menu"
+                                aria-label="Sign out"
+                                title={`Signed in as ${session?.user?.name ?? 'User'}`}
+                                onClick={() => signOut({ callbackUrl: '/' })}
                                 className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-gray-200 transition hover:ring-blue-400"
                             >
                                 <div className="flex h-full w-full items-center justify-center bg-blue-600 text-xs font-bold text-white">
-                                    U
+                                    {userInitial}
                                 </div>
                             </button>
                         </>
