@@ -4,23 +4,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from '@/lib/events';
-
-interface Author {
-    id: string;
-    username: string;
-}
-
-interface Answer {
-    id: string;
-    body: string;
-    score: number;
-    created_at: string;
-    author: Author;
-    userVote: number;
-}
+import { AnswerListItem } from '@/types/api';
 
 interface AnswerItemProps {
-    answer: Answer;
+    answer: AnswerListItem;
     isAccepted?: boolean;
     questionAuthorId: string;
 }

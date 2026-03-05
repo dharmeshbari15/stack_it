@@ -2,8 +2,9 @@ import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, notFound } from '@/lib/api-handler';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { QuestionDetail } from '@/types/api';
 
-export const GET = apiHandler(async (req: NextRequest, { params }) => {
+export const GET = apiHandler<{ id: string }, QuestionDetail>(async (req: NextRequest, { params }) => {
     const { id } = await params;
     const session = await auth();
     const currentUserId = session?.user?.id;
@@ -81,7 +82,7 @@ export const GET = apiHandler(async (req: NextRequest, { params }) => {
 
         return apiSuccess(formattedQuestion);
     } catch (error) {
-        console.error(`[GET /api/v1/questions/${id}] Error:`, error);
+        if (error instanceof Error && 'statusCode' in error) throw error;
         throw error;
     }
 });

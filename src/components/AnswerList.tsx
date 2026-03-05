@@ -1,21 +1,10 @@
 'use client';
 
 import { AnswerItem } from './AnswerItem';
-
-interface Answer {
-    id: string;
-    body: string;
-    score: number;
-    created_at: string;
-    author: {
-        id: string;
-        username: string;
-    };
-    userVote: number;
-}
+import { AnswerListItem } from '@/types/api';
 
 interface AnswerListProps {
-    answers: Answer[];
+    answers: AnswerListItem[];
     acceptedAnswerId: string | null;
     questionAuthorId: string;
 }
