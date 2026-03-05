@@ -3,24 +3,10 @@
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import DOMPurify from 'isomorphic-dompurify';
-
-interface Author {
-    id: string;
-    username: string;
-}
-
-interface Question {
-    id: string;
-    title: string;
-    description: string;
-    author: Author;
-    tags: string[];
-    created_at: string;
-    accepted_answer_id: string | null;
-}
+import { QuestionDetail } from '@/types/api';
 
 interface QuestionContentProps {
-    question: Question;
+    question: Omit<QuestionDetail, 'answers'>;
 }
 
 export function QuestionContent({ question }: QuestionContentProps) {
@@ -42,7 +28,7 @@ export function QuestionContent({ question }: QuestionContentProps) {
                             {question.author.username}
                         </div>
                         <span>•</span>
-                        <time dateTime={question.created_at}>
+                        <time dateTime={typeof question.created_at === 'string' ? question.created_at : question.created_at.toISOString()}>
                             Asked {formatDistanceToNow(new Date(question.created_at), { addSuffix: true })}
                         </time>
                     </div>

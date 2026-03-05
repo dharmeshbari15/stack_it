@@ -194,7 +194,7 @@ export const GET = apiHandler<any, QuestionsResponse>(async (req) => {
             total_questions: totalQuestions,
         });
     } catch (error) {
-        console.error('[GET /api/v1/questions] Error:', error);
+        if (error instanceof Error && 'statusCode' in error) throw error;
         throw error; // Re-throw to be caught by apiHandler
     }
 });

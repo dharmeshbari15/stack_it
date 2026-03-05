@@ -28,6 +28,10 @@ export interface QuestionListItem {
     created_at: string | Date;
 }
 
+export interface QuestionDetail extends Omit<QuestionListItem, 'answers_count'> {
+    answers: AnswerListItem[];
+}
+
 export interface QuestionsResponse {
     questions: QuestionListItem[];
     total_pages: number;
@@ -54,6 +58,18 @@ export interface AnswerItem {
         id: string;
         username: string;
     };
+}
+
+export interface AnswerListItem {
+    id: string;
+    body: string;
+    score: number;
+    created_at: string | Date;
+    author: {
+        id: string;
+        username: string;
+    };
+    userVote: number;
 }
 
 /**

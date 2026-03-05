@@ -7,7 +7,7 @@ import { QuestionContent } from '@/components/QuestionContent';
 import { AnswerList } from '@/components/AnswerList';
 import { PostAnswerForm } from '@/components/PostAnswerForm';
 import Link from 'next/link';
-import { QuestionsResponse } from '@/types/api';
+import { QuestionDetail, ApiResponse } from '@/types/api';
 
 export default function QuestionDetailPage() {
     const { id } = useParams();
@@ -16,7 +16,7 @@ export default function QuestionDetailPage() {
     const { status } = useSession();
     const isLoggedIn = status === 'authenticated';
 
-    const { data, isLoading, isError, error } = useQuery<QuestionsResponse>({
+    const { data: response, isLoading, isError, error } = useQuery<ApiResponse<QuestionDetail>>({
         queryKey: ['question', id],
         queryFn: async () => {
             const res = await fetch(`/api/v1/questions/${id}`);
@@ -74,7 +74,17 @@ export default function QuestionDetailPage() {
         );
     }
 
-    const question = data?.data;
+    const question = response?.data;
+
+    if (!question) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                <div className="text-center">
+                    <p className="text-gray-600 font-medium">Question not found.</p>
+                </div>
+            </div>
+        );
+    }
 
     const handleGuestSubmit = () => {
         router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
@@ -93,7 +103,11 @@ export default function QuestionDetailPage() {
                 <QuestionContent question={question} />
 
                 <div className="border-t border-gray-200 pt-12">
-                    <AnswerList answers={question.answers} acceptedAnswerId={question.accepted_answer_id} />
+                    <AnswerList
+                        answers={question.answers}
+                        acceptedAnswerId={question.accepted_answer_id}
+                        questionAuthorId={question.author.id}
+                    />
                 </div>
 
                 <div className="border-t border-gray-200 pt-12">
