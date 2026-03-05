@@ -25,7 +25,6 @@ function createPrismaClient(): PrismaClient {
     }
 
     const pool = new Pool({ connectionString });
-    // @ts-expect-error - pg.Pool does not perfectly align with neon.Pool required by adapter
     const adapter = new PrismaPg(pool);
 
 
