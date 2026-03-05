@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { ApiResponse } from '@/types/api';
 
 // ─── Error Types ──────────────────────────────────────────────────────────────
 
@@ -53,12 +54,12 @@ export const internalError = (message = 'Internal server error') =>
 // ─── Response Helpers ─────────────────────────────────────────────────────────
 
 /** Returns a standardized JSON success response. */
-export function apiSuccess<T>(data: T, status = 200): NextResponse {
-    return NextResponse.json({ success: true, data }, { status });
+export function apiSuccess<T>(data: T, status = 200): NextResponse<ApiResponse<T>> {
+    return NextResponse.json({ success: true, data }, { status }) as NextResponse<ApiResponse<T>>;
 }
 
 /** Returns a standardized JSON error response. */
-export function apiError(error: ApiError): NextResponse {
+export function apiError(error: ApiError): NextResponse<ApiResponse<never>> {
     return NextResponse.json(
         {
             success: false,
@@ -68,31 +69,32 @@ export function apiError(error: ApiError): NextResponse {
             },
         },
         { status: error.statusCode },
-    );
+    ) as NextResponse<ApiResponse<never>>;
 }
 
 // ─── Route Handler Wrapper ────────────────────────────────────────────────────
 
-type RouteHandler<T = any> = (
+/**
+ * Definition for a Next.js App Router route handler.
+ * @template TParams - Type of the route parameters
+ * @template TResponse - Type of the data returned on success
+ */
+export type RouteHandler<TParams = any, TResponse = any> = (
     req: NextRequest,
-    context: { params: Promise<T> },
-) => Promise<any>;
+    context: { params: Promise<TParams> },
+) => Promise<NextResponse<ApiResponse<TResponse>> | Response>;
 
 /**
  * Wraps a Next.js App Router route handler with standardized error handling.
  * Catches ApiError, ZodError, and unexpected errors automatically.
- *
- * @example
- * export const GET = apiHandler(async (req) => {
- *   const data = await prisma.question.findMany();
- *   return apiSuccess(data);
- * });
  */
-export function apiHandler(handler: RouteHandler): RouteHandler {
+export function apiHandler<TParams = any, TResponse = any>(
+    handler: RouteHandler<TParams, TResponse>
+): (req: NextRequest, context: { params: Promise<TParams> }) => Promise<Response> {
     return async (req, context) => {
         try {
             return await handler(req, context);
-        } catch (err) {
+        } catch (err: any) {
             // Known API error — return the structured response directly
             if (err instanceof ApiError) {
                 return apiError(err);
@@ -110,7 +112,7 @@ export function apiHandler(handler: RouteHandler): RouteHandler {
                         },
                     },
                     { status: 400 },
-                );
+                ) as NextResponse<ApiResponse<never>>;
             }
 
             // Unexpected error — log it and return a generic 500
@@ -119,12 +121,12 @@ export function apiHandler(handler: RouteHandler): RouteHandler {
                 {
                     success: false,
                     error: {
-                        message: 'An unexpected error occurred',
+                        message: err.message || 'An unexpected error occurred',
                         code: 'INTERNAL_ERROR',
                     },
                 },
                 { status: 500 },
-            );
+            ) as NextResponse<ApiResponse<never>>;
         }
     };
 }

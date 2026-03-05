@@ -112,11 +112,11 @@
 ---
 
 ## 8. Optimization & Hardening
-- [ ] Implement universal server-side DOMPurify sanitization before any HTML is saved to PostgreSQL.
-- [ ] Configure `next.config.js` to whitelist specific external image domains for `next/image` optimization.
-- [ ] Implement Redis-based (via KV) or native middleware Rate Limiting on `/api/v1/auth/register` and `/api/v1/questions` POST routes.
-- [ ] Ensure all API routes correctly type responses generating strict TypeScript interfaces.
-- [ ] Perform manual edge-case testing: Attempt submitting answer as a guest (ensure correct redirect to login).
+- [x] Implement universal server-side DOMPurify sanitization before any HTML is saved to PostgreSQL.
+- [x] Configure `next.config.js` to whitelist specific external image domains for `next/image` optimization.
+- [x] Implement Redis-based (via KV) or native middleware Rate Limiting on `/api/v1/auth/register` and `/api/v1/questions` POST routes.
+- [x] Ensure all API routes correctly type responses generating strict TypeScript interfaces.
+- [x] Perform manual edge-case testing: Attempt submitting answer as a guest (ensure correct redirect to login).
 
 ---
 

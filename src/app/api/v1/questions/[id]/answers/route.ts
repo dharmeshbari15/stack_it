@@ -1,25 +1,23 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { apiHandler } from '@/lib/api-handler';
-import DOMPurify from 'isomorphic-dompurify';
+import { apiHandler, apiSuccess, unauthorized, notFound, badRequest } from '@/lib/api-handler';
+import { sanitizeHtml, isValidContent } from '@/lib/sanitizer';
+import { AnswerItem } from '@/types/api';
 import * as z from 'zod';
 
 const answerSchema = z.object({
     body: z.string().min(30, 'Answer must be at least 30 characters long'),
 });
 
-export const POST = apiHandler(async (
+export const POST = apiHandler<{ id: string }, AnswerItem>(async (
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) => {
     const session = await auth();
 
     if (!session?.user) {
-        return {
-            status: 401,
-            body: { error: { message: 'Authentication required' } }
-        };
+        throw unauthorized();
     }
 
     const { id: questionId } = await params;
@@ -31,10 +29,7 @@ export const POST = apiHandler(async (
     });
 
     if (!question || question.deleted_at) {
-        return {
-            status: 404,
-            body: { error: { message: 'Question not found' } }
-        };
+        throw notFound('Question');
     }
 
     // 2. Validate request body
@@ -42,14 +37,15 @@ export const POST = apiHandler(async (
     const result = answerSchema.safeParse(json);
 
     if (!result.success) {
-        return {
-            status: 400,
-            body: { error: { message: result.error.issues[0].message } }
-        };
+        throw badRequest(result.error.issues[0].message);
     }
 
     // 3. Sanitize HTML body
-    const sanitizedBody = DOMPurify.sanitize(result.data.body);
+    const sanitizedBody = sanitizeHtml(result.data.body);
+
+    if (!isValidContent(sanitizedBody)) {
+        throw badRequest('Answer contains invalid or unsafe content.');
+    }
 
     // 4. Create answer and notification in a transaction for atomicity
     const answer = await prisma.$transaction(async (tx) => {
@@ -81,14 +77,8 @@ export const POST = apiHandler(async (
             });
         }
 
-        return newAnswer;
+        return newAnswer as AnswerItem;
     });
 
-    return {
-        status: 201,
-        body: {
-            success: true,
-            data: answer
-        }
-    };
+    return apiSuccess(answer, 201);
 });

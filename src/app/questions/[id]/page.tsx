@@ -1,21 +1,22 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { QuestionContent } from '@/components/QuestionContent';
 import { AnswerList } from '@/components/AnswerList';
+import { PostAnswerForm } from '@/components/PostAnswerForm';
 import Link from 'next/link';
-
-interface QuestionResponse {
-    success: boolean;
-    data: any;
-}
+import { QuestionsResponse } from '@/types/api';
 
 export default function QuestionDetailPage() {
     const { id } = useParams();
     const router = useRouter();
+    const pathname = usePathname();
+    const { status } = useSession();
+    const isLoggedIn = status === 'authenticated';
 
-    const { data, isLoading, isError, error } = useQuery<QuestionResponse>({
+    const { data, isLoading, isError, error } = useQuery<QuestionsResponse>({
         queryKey: ['question', id],
         queryFn: async () => {
             const res = await fetch(`/api/v1/questions/${id}`);
@@ -75,6 +76,10 @@ export default function QuestionDetailPage() {
 
     const question = data?.data;
 
+    const handleGuestSubmit = () => {
+        router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+    };
+
     return (
         <div className="min-h-[calc(100vh-3.5rem)] bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto space-y-12">
@@ -82,7 +87,7 @@ export default function QuestionDetailPage() {
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Link href="/" className="hover:text-blue-600 transition-colors">Questions</Link>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                    <span className="truncate max-w-[200px]">{question.title}</span>
+                    <span className="truncate max-w-[200px] font-medium">{question.title}</span>
                 </div>
 
                 <QuestionContent question={question} />
@@ -91,13 +96,21 @@ export default function QuestionDetailPage() {
                     <AnswerList answers={question.answers} acceptedAnswerId={question.accepted_answer_id} />
                 </div>
 
-                {/* Answer Form Placeholder (Future Task) */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 text-center">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Know the answer?</h3>
-                    <p className="text-gray-600 mb-6">Your expertise could help this developer move forward.</p>
-                    <button className="px-8 py-3 rounded-full bg-blue-600 text-white font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50">
-                        Post Your Answer
-                    </button>
+                <div className="border-t border-gray-200 pt-12">
+                    {isLoggedIn ? (
+                        <PostAnswerForm questionId={question.id} />
+                    ) : (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-8 sm:p-10 text-center shadow-sm">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Know the answer?</h3>
+                            <p className="text-gray-600 mb-8">Your expertise could help this developer move forward. Sign in to contribute.</p>
+                            <button
+                                onClick={handleGuestSubmit}
+                                className="px-10 py-3.5 rounded-full bg-blue-600 text-white font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 hover:shadow-blue-200 transition-all active:scale-95"
+                            >
+                                Sign in to Answer
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

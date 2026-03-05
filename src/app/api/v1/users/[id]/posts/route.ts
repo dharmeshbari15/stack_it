@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { apiHandler } from '@/lib/api-handler';
+import { apiHandler, apiSuccess, notFound } from '@/lib/api-handler';
+import { UserPost } from '@/types/api';
 
-export const GET = apiHandler(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = apiHandler<{ id: string }, UserPost[]>(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id: userId } = await params;
 
     const user = await prisma.user.findUnique({
@@ -11,10 +12,7 @@ export const GET = apiHandler(async (req: NextRequest, { params }: { params: Pro
     });
 
     if (!user) {
-        return {
-            status: 404,
-            body: { error: { message: 'User not found' } }
-        };
+        throw notFound('User');
     }
 
     // Fetch questions authored by user
@@ -47,7 +45,7 @@ export const GET = apiHandler(async (req: NextRequest, { params }: { params: Pro
     });
 
     // Transform into unified Post objects
-    const questionPosts = questions.map(q => ({
+    const questionPosts: UserPost[] = questions.map(q => ({
         id: q.id,
         type: 'QUESTION',
         title: q.title,
@@ -58,7 +56,7 @@ export const GET = apiHandler(async (req: NextRequest, { params }: { params: Pro
         }
     }));
 
-    const answerPosts = answers.map(a => ({
+    const answerPosts: UserPost[] = answers.map(a => ({
         id: a.id,
         type: 'ANSWER',
         title: a.question.title,
@@ -71,15 +69,9 @@ export const GET = apiHandler(async (req: NextRequest, { params }: { params: Pro
     }));
 
     // Combine and sort chronologically
-    const allPosts = [...questionPosts, ...answerPosts].sort((a, b) =>
+    const allPosts: UserPost[] = [...questionPosts, ...answerPosts].sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
-    return {
-        status: 200,
-        body: {
-            success: true,
-            data: allPosts
-        }
-    };
+    return apiSuccess(allPosts);
 });
