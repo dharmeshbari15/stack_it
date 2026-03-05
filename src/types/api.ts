@@ -130,3 +130,13 @@ export interface RegisterUserResponse {
 export interface MessageResponse {
     message: string;
 }
+
+export interface AcceptAnswerResponse {
+    id: string;
+    accepted_answer_id: string;
+}
+
+export interface VoteResponse {
+    id: string;
+    score: number;
+}

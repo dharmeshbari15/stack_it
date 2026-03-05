@@ -1,40 +1,29 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { apiHandler } from '@/lib/api-handler';
+import { apiHandler, apiSuccess, badRequest, forbidden, notFound, unauthorized } from '@/lib/api-handler';
+import { parseBody } from '@/lib/validate';
+import { AcceptAnswerResponse } from '@/types/api';
 import * as z from 'zod';
 
 const acceptAnswerSchema = z.object({
     answerId: z.string().uuid('Invalid Answer ID'),
 });
 
-export const PATCH = apiHandler(async (
+export const PATCH = apiHandler<{ id: string }, AcceptAnswerResponse>(async (
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }
 ) => {
     const session = await auth();
 
-    if (!session?.user) {
-        return {
-            status: 401,
-            body: { error: { message: 'Authentication required' } }
-        };
+    if (!session?.user?.id) {
+        throw unauthorized();
     }
 
     const { id: questionId } = await params;
 
     // 1. Validate request body
-    const json = await req.json();
-    const result = acceptAnswerSchema.safeParse(json);
-
-    if (!result.success) {
-        return {
-            status: 400,
-            body: { error: { message: result.error.issues[0].message } }
-        };
-    }
-
-    const { answerId } = result.data;
+    const { answerId } = await parseBody(req, acceptAnswerSchema);
 
     // 2. Fetch question and verify ownership
     const question = await prisma.question.findUnique({
@@ -46,17 +35,11 @@ export const PATCH = apiHandler(async (
     });
 
     if (!question || question.deleted_at) {
-        return {
-            status: 404,
-            body: { error: { message: 'Question not found' } }
-        };
+        throw notFound('Question');
     }
 
     if (question.author_id !== session.user.id) {
-        return {
-            status: 403,
-            body: { error: { message: 'Only the question author can accept an answer' } }
-        };
+        throw forbidden('Only the question author can accept an answer');
     }
 
     // 3. Verify answer exists and belongs to this question
@@ -69,10 +52,7 @@ export const PATCH = apiHandler(async (
     });
 
     if (!answer || answer.deleted_at || answer.question_id !== questionId) {
-        return {
-            status: 400,
-            body: { error: { message: 'Invalid answer for this question' } }
-        };
+        throw badRequest('Invalid answer for this question');
     }
 
     // 4. Update question with accepted answer
@@ -87,11 +67,8 @@ export const PATCH = apiHandler(async (
         }
     });
 
-    return {
-        status: 200,
-        body: {
-            success: true,
-            data: updatedQuestion
-        }
-    };
+    return apiSuccess({
+        id: updatedQuestion.id,
+        accepted_answer_id: updatedQuestion.accepted_answer_id as string,
+    });
 });
