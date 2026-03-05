@@ -31,14 +31,14 @@
 ### Frontend Infrastructure
 - [x] Setup standard layout component (`app/layout.tsx`) including global navigation bar.
 - [x] Setup React Query Provider at the application root for client-side data fetching.
-- [ ] Create basic global loading state and error boundary components.
+- [x] Create basic global loading state and error boundary components.
 
 ---
 
 ## 3. Feature: User Authentication
 
 ### Backend
-- [ ] Configure `NextAuth.js` (`auth.ts` / `app/api/auth/[...nextauth]/route.ts`).
+- [x] Configure `NextAuth.js` (`auth.ts` / `app/api/auth/[...nextauth]/route.ts`).
 - [ ] Implement Credentials Provider (Email/Password) within NextAuth.
 - [ ] Write bcrypt password hashing logic for user registration endpoint (`POST /api/v1/auth/register`).
 - [ ] Implement JWT configuration for stateless session management in NextAuth.
