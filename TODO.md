@@ -87,11 +87,11 @@
 ## 6. Feature: Internal Notifications
 
 ### Backend
-- [ ] Implement internal event bus/utility function to spawn generic notifications.
-- [ ] Hook notification utility into Answer submission logic (notify question owner).
+- [x] Implement internal event bus/utility function to spawn generic notifications.
+- [x] Hook notification utility into Answer submission logic (notify question owner).
 - [ ] Hook notification utility into `@username` parsing regex during question/answer backend sanitization.
-- [ ] Create endpoint: `GET /api/v1/notifications` (Fetch unread notifications for active user).
-- [ ] Create endpoint: `PATCH /api/v1/notifications/read` (Mark notifications as read).
+- [x] Create endpoint: `GET /api/v1/notifications` (Fetch unread notifications for active user).
+- [x] Create endpoint: `PATCH /api/v1/notifications/read` (Mark notifications as read).
 
 ### Frontend
 - [ ] Build Notification Bell icon component in global Navigation Bar.

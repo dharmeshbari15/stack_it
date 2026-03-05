@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import { Toaster } from '@/components/Toaster';
 import QueryProvider from '@/components/QueryProvider';
 import SessionProvider from '@/components/SessionProvider';
 import { auth } from '@/auth';
@@ -43,6 +44,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-gray-50 font-sans antialiased">
+        <Toaster />
         <SessionProvider session={session}>
           <QueryProvider>
             {/* Global navigation bar — present on every page */}
