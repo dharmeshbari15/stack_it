@@ -60,11 +60,11 @@
 - [x] Create endpoint: `DELETE /api/v1/system/posts/[id]` (Admin soft delete logic via `deleted_at`).
 
 ### Frontend
-- [ ] Build Home/Feed page (`/`) displaying paginated list of active questions.
-- [ ] Build "Ask Question" page (`/ask`).
-- [ ] Integrate TipTap Rich Text Editor into the Ask Question form.
-- [ ] Add tag selection input component (enforcing required tags).
-- [ ] Build Question Detail page (`/question/[id]`) displaying question description and metadata.
+- [x] Build Home/Feed page (`/`) displaying paginated list of active questions.
+- [x] Build "Ask Question" page (`/ask`).
+- [x] Integrate TipTap Rich Text Editor into the Ask Question form.
+- [x] Add tag selection input component (enforcing required tags).
+- [x] Build Question Detail page (`/question/[id]`) displaying question description and metadata.
 
 ---
 
