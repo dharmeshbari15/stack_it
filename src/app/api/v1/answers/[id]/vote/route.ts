@@ -1,40 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { apiHandler } from '@/lib/api-handler';
+import { apiHandler, apiSuccess, badRequest, notFound, unauthorized } from '@/lib/api-handler';
+import { parseBody } from '@/lib/validate';
+import { VoteResponse } from '@/types/api';
 import * as z from 'zod';
 
 const voteSchema = z.object({
     value: z.union([z.literal(1), z.literal(-1)]),
 });
 
-export const POST = apiHandler(async (
+export const POST = apiHandler<{ id: string }, VoteResponse>(async (
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }
 ) => {
     const session = await auth();
 
-    if (!session?.user) {
-        return NextResponse.json(
-            { error: { message: 'Authentication required' } },
-            { status: 401 }
-        );
+    if (!session?.user?.id) {
+        throw unauthorized();
     }
 
     const { id: answerId } = await params;
 
     // 1. Validate request body
-    const json = await req.json();
-    const result = voteSchema.safeParse(json);
-
-    if (!result.success) {
-        return NextResponse.json(
-            { error: { message: 'Value must be 1 (upvote) or -1 (downvote)' } },
-            { status: 400 }
-        );
-    }
-
-    const { value: newValue } = result.data;
+    const { value: newValue } = await parseBody(req, voteSchema);
     const userId = session.user.id;
 
     try {
@@ -47,7 +36,7 @@ export const POST = apiHandler(async (
             });
 
             if (!answer || answer.deleted_at) {
-                throw new Error('NOT_FOUND');
+                throw notFound('Answer');
             }
 
             // Check for existing vote
@@ -114,17 +103,9 @@ export const POST = apiHandler(async (
             });
         });
 
-        return NextResponse.json({
-            success: true,
-            data: updatedAnswer
-        });
+        return apiSuccess(updatedAnswer);
     } catch (err: any) {
-        if (err.message === 'NOT_FOUND') {
-            return NextResponse.json(
-                { error: { message: 'Answer not found' } },
-                { status: 404 }
-            );
-        }
+        if (err instanceof Error && 'statusCode' in err) throw err;
         throw err;
     }
 });
