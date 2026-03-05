@@ -8,7 +8,9 @@
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 import { NotificationBell } from './NotificationBell';
+import { User, LogOut, ChevronDown, Settings } from 'lucide-react';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -102,9 +104,21 @@ function NavLink({ href, label }: { href: string; label: string }) {
 
 export default function Navbar() {
     const { data: session, status } = useSession();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const isLoggedIn = status === 'authenticated';
-    // First letter of the username for the avatar initials
     const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? '?';
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
@@ -122,7 +136,7 @@ export default function Navbar() {
                     <NavLink href="/users" label="Users" />
                 </div>
 
-                {/* Search bar — grows to fill available space */}
+                {/* Search bar */}
                 <div className="relative mx-4 hidden flex-1 md:flex">
                     <label htmlFor="navbar-search" className="sr-only">
                         Search questions, tags, users
@@ -142,27 +156,63 @@ export default function Navbar() {
                 <div className="ml-auto flex items-center gap-3">
                     {isLoggedIn ? (
                         <>
-                            {/* Notification bell — reactive with unread count */}
                             <NotificationBell />
 
-                            {/* User avatar — click to sign out (profile menu added in later task) */}
-                            <button
-                                id="navbar-user-menu"
-                                aria-label="Sign out"
-                                title={`Signed in as ${session?.user?.name ?? 'User'}`}
-                                onClick={() => signOut({ callbackUrl: '/' })}
-                                className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-gray-200 transition hover:ring-blue-400"
-                            >
-                                <div className="flex h-full w-full items-center justify-center bg-blue-600 text-xs font-bold text-white">
-                                    {userInitial}
-                                </div>
-                            </button>
+                            <div className="relative" ref={menuRef}>
+                                <button
+                                    id="navbar-user-menu"
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                    className="flex items-center gap-1 rounded-full p-0.5 pr-2 transition hover:bg-gray-50 ring-1 ring-transparent hover:ring-gray-200"
+                                >
+                                    <div className="h-8 w-8 overflow-hidden rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-sm ring-2 ring-white">
+                                        {userInitial}
+                                    </div>
+                                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in duration-150">
+                                        <div className="px-3 py-2 border-b border-gray-50 mb-1">
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Signed in as</p>
+                                            <p className="text-sm font-black text-gray-900 truncate">{session?.user?.name}</p>
+                                        </div>
+
+                                        <Link
+                                            href={`/users/${session?.user?.id}`}
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                        >
+                                            <User className="h-4 w-4" />
+                                            View Profile
+                                        </Link>
+
+                                        <Link
+                                            href="/settings"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                        >
+                                            <Settings className="h-4 w-4" />
+                                            Settings
+                                        </Link>
+
+                                        <div className="my-1 border-t border-gray-50" />
+
+                                        <button
+                                            onClick={() => signOut({ callbackUrl: '/' })}
+                                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </>
                     ) : (
                         <Link
                             id="navbar-login"
                             href="/login"
-                            className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                            className="rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-lg shadow-blue-100 transition hover:bg-blue-700 active:scale-95"
                         >
                             Log in
                         </Link>

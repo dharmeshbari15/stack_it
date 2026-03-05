@@ -47,10 +47,10 @@ export default async function RootLayout({
         <Toaster />
         <SessionProvider session={session}>
           <QueryProvider>
-            {/* Global navigation bar — present on every page */}
             <Navbar />
-            {/* Main page content */}
-            <main>{children}</main>
+            <div className="min-h-screen bg-gray-50">
+              {children}
+            </div>
           </QueryProvider>
         </SessionProvider>
       </body>

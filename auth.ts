@@ -40,7 +40,7 @@ export const authConfig: NextAuthConfig = {
                 if (!email || !password) return null;
 
                 // Look up the user by email
-                const user = await prisma.user.findUnique({
+                const user = await prisma.user.findFirst({
                     where: { email },
                     select: {
                         id: true,

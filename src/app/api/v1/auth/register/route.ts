@@ -52,8 +52,8 @@ export const POST = apiHandler<any, RegisterUserResponse>(async (req) => {
 
     // Check for existing email or username in a single parallel query
     const [emailExists, usernameExists] = await Promise.all([
-        prisma.user.findUnique({ where: { email }, select: { id: true } }),
-        prisma.user.findUnique({ where: { username }, select: { id: true } }),
+        prisma.user.findFirst({ where: { email }, select: { id: true } }),
+        prisma.user.findFirst({ where: { username }, select: { id: true } }),
     ]);
 
     if (emailExists) {

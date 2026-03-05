@@ -120,7 +120,13 @@ export default function UserProfilePage() {
                     </div>
 
                     <div className="shrink-0 w-full md:w-auto">
-                        <button className="w-full md:w-auto px-6 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-black transition-all active:scale-95">
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(window.location.href);
+                                alert('Profile link copied to clipboard!');
+                            }}
+                            className="w-full md:w-auto px-6 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-black transition-all active:scale-95"
+                        >
                             Share Profile
                         </button>
                     </div>
