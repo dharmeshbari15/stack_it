@@ -24,7 +24,7 @@
 - [x] Add database indexes on `Tag(name)`, `Question(created_at)`, `Vote(composite pk)`, and `Notification(user_id)`.
 
 ### Backend Infrastructure (Next.js API Routes)
-- [ ] Setup global Prisma Client singleton for API route database access.
+- [x] Setup global Prisma Client singleton for API route database access.
 - [ ] Create standardized API error handler wrapper/utility function.
 - [ ] Configure Zod schema validation utility for incoming REST requests.
 
