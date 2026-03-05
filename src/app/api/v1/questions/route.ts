@@ -112,85 +112,90 @@ const getQuestionsQuerySchema = z.object({
 });
 
 export const GET = apiHandler(async (req) => {
-    // 1. Parse URL Query Parameters
-    const { searchParams } = new URL(req.url);
-    const rawQueryParams = {
-        page: searchParams.get('page') ?? undefined,
-        limit: searchParams.get('limit') ?? undefined,
-        tag: searchParams.get('tag') ?? undefined,
-    };
-
-    const { page, limit, tag } = getQuestionsQuerySchema.parse(rawQueryParams);
-
-    // 2. Query Calculation Base
-    const skip = (page - 1) * limit;
-
-    // Construct the Prisma `where` clause
-    const whereClause: any = {
-        deleted_at: null, // Only fetch active questions
-    };
-
-    if (tag) {
-        whereClause.tags = {
-            some: {
-                tag: {
-                    name: tag.toLowerCase(),
-                },
-            },
+    try {
+        // 1. Parse URL Query Parameters
+        const { searchParams } = new URL(req.url);
+        const rawQueryParams = {
+            page: searchParams.get('page') ?? undefined,
+            limit: searchParams.get('limit') ?? undefined,
+            tag: searchParams.get('tag') ?? undefined,
         };
+
+        const { page, limit, tag } = getQuestionsQuerySchema.parse(rawQueryParams);
+
+        // 2. Query Calculation Base
+        const skip = (page - 1) * limit;
+
+        // Construct the Prisma `where` clause
+        const whereClause: any = {
+            deleted_at: null, // Only fetch active questions
+        };
+
+        if (tag) {
+            whereClause.tags = {
+                some: {
+                    tag: {
+                        name: tag.toLowerCase().trim(),
+                    },
+                },
+            };
+        }
+
+        // 3. Concurrent Database Query Request
+        const [totalQuestions, questions] = await Promise.all([
+            prisma.question.count({ where: whereClause }),
+            prisma.question.findMany({
+                where: whereClause,
+                skip,
+                take: limit,
+                orderBy: {
+                    created_at: 'desc',
+                },
+                include: {
+                    author: {
+                        select: {
+                            id: true,
+                            username: true,
+                        },
+                    },
+                    tags: {
+                        include: {
+                            tag: true, // Fetch the actual nested Tag string entity
+                        },
+                    },
+                    _count: {
+                        select: { answers: true },
+                    },
+                },
+            }),
+        ]);
+
+        // 4. Format Output
+        const formattedQuestions = questions.map((q) => ({
+            id: q.id,
+            title: q.title,
+            description: q.description,
+            author: {
+                id: q.author.id,
+                username: q.author.username,
+            },
+            tags: q.tags.map((qt) => qt.tag.name),
+            answers_count: q._count.answers,
+            accepted_answer_id: q.accepted_answer_id,
+            created_at: q.created_at,
+        }));
+
+        // 5. Context Response
+        const total_pages = Math.ceil(totalQuestions / limit);
+
+        return apiSuccess({
+            questions: formattedQuestions,
+            total_pages,
+            current_page: page,
+            total_questions: totalQuestions,
+        });
+    } catch (error) {
+        console.error('[GET /api/v1/questions] Error:', error);
+        throw error; // Re-throw to be caught by apiHandler
     }
-
-    // 3. Concurrent Database Query Request
-    const [totalQuestions, questions] = await Promise.all([
-        prisma.question.count({ where: whereClause }),
-        prisma.question.findMany({
-            where: whereClause,
-            skip,
-            take: limit,
-            orderBy: {
-                created_at: 'desc',
-            },
-            include: {
-                author: {
-                    select: {
-                        id: true,
-                        username: true,
-                    },
-                },
-                tags: {
-                    include: {
-                        tag: true, // Fetch the actual nested Tag string entity
-                    },
-                },
-                _count: {
-                    select: { answers: true },
-                },
-            },
-        }),
-    ]);
-
-    // 4. Format Output
-    const formattedQuestions = questions.map((q) => ({
-        id: q.id,
-        title: q.title,
-        description: q.description,
-        author: {
-            id: q.author.id,
-            username: q.author.username,
-        },
-        tags: q.tags.map((qt) => qt.tag.name),
-        answers_count: q._count.answers,
-        accepted_answer_id: q.accepted_answer_id,
-        created_at: q.created_at,
-    }));
-
-    // 5. Context Response
-    const total_pages = Math.ceil(totalQuestions / limit);
-
-    return apiSuccess({
-        questions: formattedQuestions,
-        total_pages,
-        current_page: page,
-        total_questions: totalQuestions,
-    });
 });
