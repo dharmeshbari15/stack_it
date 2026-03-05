@@ -103,11 +103,11 @@
 ## 7. Feature: User Profile
 
 ### Backend
-- [ ] Create endpoint: `GET /api/v1/users/[id]/posts` (Aggregate user's asked questions and submitted answers).
+- [x] Create endpoint: `GET /api/v1/users/[id]/posts` (Aggregate user's asked questions and submitted answers).
 
 ### Frontend
-- [ ] Build User Profile page (`/user/[id]`).
-- [ ] Implement tabbed UI separating "Questions" and "Answers" lists for that user.
+- [x] Build User Profile page (`/user/[id]`).
+- [x] Implement tabbed UI separating "Questions" and "Answers" lists for that user.
 
 ---
 
