@@ -111,8 +111,7 @@ TODO: Add details
 
 1. Deploy the PostgreSQL database to a provider like Supabase.
 2. Ensure the `DATABASE_URL` is configured correctly for your hosting environment.
-3. Deploy the Next.js application to Vercel by connecting your GitHub repository.
-4. Add the `NEXTAUTH_SECRET` and `NEXTAUTH_URL` environment variables in the Vercel dashboard.
+3. Deploy the Next.js application to your preferred hosting provider.
 
 ## 🤝 Contributing
 

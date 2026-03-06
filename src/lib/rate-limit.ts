@@ -1,7 +1,7 @@
 /**
  * Simple in-memory rate limiter for Next.js Middleware.
  * 
- * NOTE: In serverless environments (Vercel), memory is not shared between instances.
+ * NOTE: In serverless or multi-instance environments, memory is not shared.
  * This provides "per-instance" rate limiting which is a good first-degree defense
  * without requiring external Redis/KV dependencies.
  */

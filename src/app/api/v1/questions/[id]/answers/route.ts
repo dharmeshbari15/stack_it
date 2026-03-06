@@ -70,7 +70,7 @@ export const POST = apiHandler<{ id: string }, AnswerItem>(async (
             await tx.notification.create({
                 data: {
                     type: 'ANSWER',
-                    reference_id: newAnswer.id,
+                    reference_id: questionId,
                     user_id: question.author_id,
                     actor_id: session.user.id,
                 }

@@ -123,18 +123,19 @@ export function AskQuestionForm() {
                     Everything else
                 </label>
                 <p className="text-xs text-gray-500 mb-2">Include all the information someone would need to answer your question. (Rich text supported)</p>
-
-                <Controller
-                    name="description"
-                    control={control}
-                    render={({ field }) => (
-                        <Editor
-                            content={field.value}
-                            onChange={field.onChange}
-                            placeholder="Steps to reproduce, expected behavior, what you've tried..."
-                        />
-                    )}
-                />
+                <div className="w-full min-w-0 max-w-full overflow-hidden">
+                    <Controller
+                        name="description"
+                        control={control}
+                        render={({ field }) => (
+                            <Editor
+                                content={field.value}
+                                onChange={field.onChange}
+                                placeholder="Steps to reproduce, expected behavior, what you've tried..."
+                            />
+                        )}
+                    />
+                </div>
 
                 {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>}
             </div>

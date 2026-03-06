@@ -67,7 +67,7 @@ export function PostAnswerForm({ questionId }: PostAnswerFormProps) {
             <h2 className="text-2xl font-bold text-gray-900">Your Answer</h2>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="min-h-[300px]">
+                <div className="min-h-[300px] w-full min-w-0 max-w-full overflow-hidden">
                     <Controller
                         name="body"
                         control={control}

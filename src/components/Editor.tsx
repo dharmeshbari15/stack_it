@@ -83,40 +83,44 @@ const MenuBar = ({ editor }: { editor: any }) => {
     ];
 
     return (
-        <div className="flex flex-wrap gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-            {buttons.map((btn, i) => (
+        <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+            <div className="flex flex-wrap items-center gap-1 flex-1">
+                {buttons.map((btn, i) => (
+                    <button
+                        key={i}
+                        type="button"
+                        onClick={btn.action}
+                        className={`p-2 rounded-md transition-colors shrink-0 ${btn.isActive
+                            ? 'bg-blue-100 text-blue-600'
+                            : 'hover:bg-gray-200 text-gray-600'
+                            }`}
+                        title={btn.title}
+                    >
+                        {btn.icon}
+                    </button>
+                ))}
+            </div>
+
+            <div className="w-px h-6 bg-gray-300 mx-1 my-auto hidden sm:block shrink-0" />
+
+            <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
                 <button
-                    key={i}
                     type="button"
-                    onClick={btn.action}
-                    className={`p-2 rounded-md transition-colors ${btn.isActive
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'hover:bg-gray-200 text-gray-600'
-                        }`}
-                    title={btn.title}
+                    onClick={() => editor.chain().focus().undo().run()}
+                    disabled={!editor.can().undo()}
+                    className="p-2 rounded-md hover:bg-gray-200 text-gray-600 disabled:opacity-30 shrink-0"
                 >
-                    {btn.icon}
+                    <Undo className="w-4 h-4" />
                 </button>
-            ))}
-
-            <div className="w-px h-6 bg-gray-300 mx-1 my-auto" />
-
-            <button
-                type="button"
-                onClick={() => editor.chain().focus().undo().run()}
-                disabled={!editor.can().undo()}
-                className="p-2 rounded-md hover:bg-gray-200 text-gray-600 disabled:opacity-30"
-            >
-                <Undo className="w-4 h-4" />
-            </button>
-            <button
-                type="button"
-                onClick={() => editor.chain().focus().redo().run()}
-                disabled={!editor.can().redo()}
-                className="p-2 rounded-md hover:bg-gray-200 text-gray-600 disabled:opacity-30"
-            >
-                <Redo className="w-4 h-4" />
-            </button>
+                <button
+                    type="button"
+                    onClick={() => editor.chain().focus().redo().run()}
+                    disabled={!editor.can().redo()}
+                    className="p-2 rounded-md hover:bg-gray-200 text-gray-600 disabled:opacity-30 shrink-0"
+                >
+                    <Redo className="w-4 h-4" />
+                </button>
+            </div>
         </div>
     );
 };
@@ -141,15 +145,17 @@ export function Editor({ content, onChange, placeholder }: EditorProps) {
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm sm:prose-base focus:outline-none max-w-none p-4 min-h-[300px]',
+                class: 'prose prose-sm sm:prose-base focus:outline-none max-w-none p-4 min-h-[300px] w-full break-words overflow-x-hidden',
             },
         },
     });
 
     return (
-        <div className="w-full border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all overflow-hidden bg-white">
+        <div className="w-full flex flex-col min-w-0 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all overflow-hidden bg-white">
             <MenuBar editor={editor} />
-            <EditorContent editor={editor} />
+            <div className="w-full min-w-0 overflow-x-auto">
+                <EditorContent editor={editor} />
+            </div>
 
             <style jsx global>{`
         .ProseMirror p.is-editor-empty:first-child::before {
@@ -165,6 +171,7 @@ export function Editor({ content, onChange, placeholder }: EditorProps) {
           padding: 1rem;
           border-radius: 0.5rem;
           font-family: 'Fira Code', 'Courier New', Courier, monospace;
+          overflow-x: auto;
         }
         .ProseMirror blockquote {
           border-left: 3px solid #3b82f6;
