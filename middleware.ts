@@ -5,9 +5,12 @@
 // Public routes (home, questions list, tags, individual question pages) are
 // always accessible without a session (as per PRD: guest users can browse).
 
-import { auth } from './auth';
+import NextAuth from 'next-auth';
 import { NextResponse } from 'next/server';
+import { authConfig } from './auth.config';
 import { rateLimit } from './src/lib/rate-limit';
+
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
     const isLoggedIn = !!req.auth;

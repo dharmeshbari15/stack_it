@@ -1,30 +1,18 @@
 // auth.ts
-// NextAuth.js v5 (Auth.js) core configuration.
+// NextAuth.js v5 (Auth.js) core configuration — server-only.
 //
-// Strategy: Credentials-based authentication using email + password.
-// Passwords are hashed with bcryptjs before storage (handled in the register API).
-// JWT sessions are used (no database sessions) — simpler for a serverless deployment.
-//
-// The session user object is extended with `id` and `role` so both fields are
-// available in server components via `auth()` and in client components via `useSession()`.
+// This file extends the edge-safe config in auth.config.ts with the
+// Credentials provider that needs database access (Prisma + bcryptjs).
+// Middleware must NOT import this file — it should use auth.config.ts instead.
 
-import NextAuth, { type NextAuthConfig } from 'next-auth';
+import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { authConfig } from './auth.config';
 
-export const authConfig: NextAuthConfig = {
-    // Custom pages — keeps the UI consistent with the StackIt design
-    pages: {
-        signIn: '/login',
-        error: '/login', // show error on the same login page via ?error= query param
-    },
-
-    session: {
-        strategy: 'jwt',
-        // Sessions expire after 30 days of inactivity
-        maxAge: 30 * 24 * 60 * 60,
-    },
+export const { auth, signIn, signOut, handlers } = NextAuth({
+    ...authConfig,
 
     providers: [
         CredentialsProvider({
@@ -39,7 +27,6 @@ export const authConfig: NextAuthConfig = {
 
                 if (!email || !password) return null;
 
-                // Look up the user by email
                 const user = await prisma.user.findFirst({
                     where: { email },
                     select: {
@@ -53,11 +40,9 @@ export const authConfig: NextAuthConfig = {
 
                 if (!user?.password_hash) return null;
 
-                // Constant-time password comparison to prevent timing attacks
                 const isValid = await compare(password, user.password_hash);
                 if (!isValid) return null;
 
-                // Return only what we want to store in the JWT
                 return {
                     id: user.id,
                     email: user.email,
@@ -67,30 +52,4 @@ export const authConfig: NextAuthConfig = {
             },
         }),
     ],
-
-    callbacks: {
-        // Persist the user's id and role into the JWT token
-        jwt({ token, user }) {
-            if (user) {
-                token.id = user.id;
-                token.role = (user as { role: string }).role;
-            }
-            return token;
-        },
-        // Expose id and role on the session.user object
-        session({ session, token }) {
-            if (session.user) {
-                session.user.id = token.id as string;
-                (session.user as unknown as { role: string }).role = token.role as string;
-            }
-            return session;
-        },
-    },
-};
-
-// Export the auth helpers used throughout the app:
-//   auth()        — get the session in Server Components / API routes
-//   signIn()      — programmatic sign-in
-//   signOut()     — programmatic sign-out
-//   handlers      — the GET/POST route handlers for the catch-all route
-export const { auth, signIn, signOut, handlers } = NextAuth(authConfig);
+});

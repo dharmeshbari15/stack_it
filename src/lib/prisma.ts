@@ -7,6 +7,7 @@
 //
 // The singleton pattern prevents connection pool exhaustion during Next.js
 // hot-reloads in development, while production modules are only evaluated once.
+// Lazy initialization ensures the client is not created at build time.
 
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
@@ -34,8 +35,15 @@ function createPrismaClient(): PrismaClient {
     });
 }
 
-export const prisma: PrismaClient = global.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-    global.prisma = prisma;
+function getPrismaClient(): PrismaClient {
+    if (!global.prisma) {
+        global.prisma = createPrismaClient();
+    }
+    return global.prisma;
 }
+
+export const prisma = new Proxy({} as PrismaClient, {
+    get(_target, prop: string | symbol) {
+        return Reflect.get(getPrismaClient(), prop);
+    },
+});
