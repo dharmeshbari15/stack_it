@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -24,6 +24,7 @@ interface CommentComposerProps {
     isPending: boolean;
     submitLabel: string;
     placeholder: string;
+    mentionCandidates?: string[];
 }
 
 function CommentComposer({
@@ -34,16 +35,62 @@ function CommentComposer({
     isPending,
     submitLabel,
     placeholder,
+    mentionCandidates = [],
 }: CommentComposerProps) {
+    const [showMentions, setShowMentions] = useState(false);
+
+    const mentionQuery = useMemo(() => {
+        const match = value.match(/(?:^|\s)@([a-zA-Z0-9_]{1,30})$/);
+        return match?.[1]?.toLowerCase() ?? '';
+    }, [value]);
+
+    const mentionSuggestions = useMemo(() => {
+        if (!mentionQuery) return [];
+        return mentionCandidates
+            .filter((u) => u.toLowerCase().includes(mentionQuery))
+            .slice(0, 8);
+    }, [mentionCandidates, mentionQuery]);
+
+    const insertMention = (username: string) => {
+        const updated = value.replace(/@([a-zA-Z0-9_]{1,30})$/, `@${username} `);
+        onChange(updated);
+        setShowMentions(false);
+    };
+
     return (
         <div className="space-y-2">
-            <textarea
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                rows={3}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                placeholder={placeholder}
-            />
+            <div className="relative">
+                <textarea
+                    value={value}
+                    onChange={(e) => {
+                        onChange(e.target.value);
+                        setShowMentions(true);
+                    }}
+                    onFocus={() => setShowMentions(true)}
+                    onBlur={() => setTimeout(() => setShowMentions(false), 120)}
+                    rows={3}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    placeholder={placeholder}
+                />
+
+                {showMentions && mentionSuggestions.length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+                        {mentionSuggestions.map((username) => (
+                            <button
+                                key={username}
+                                type="button"
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    insertMention(username);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                                @{username}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
             <div className="flex items-center justify-end gap-2">
                 {onCancel && (
                     <button
@@ -79,6 +126,7 @@ export function CommentThread({ entityType, entityId, comments }: CommentThreadP
     const [draftById, setDraftById] = useState<Record<string, string>>({});
     const [editBody, setEditBody] = useState('');
     const [rootDraft, setRootDraft] = useState('');
+    const [mentionCandidates, setMentionCandidates] = useState<string[]>([]);
 
     const postEndpoint = entityType === 'question'
         ? `/api/v1/questions/${entityId}/comments`
@@ -87,6 +135,35 @@ export function CommentThread({ entityType, entityId, comments }: CommentThreadP
     const invalidateQuestion = () => {
         queryClient.invalidateQueries({ queryKey: ['question', questionId] });
     };
+
+    useEffect(() => {
+        const loadMentionCandidates = async () => {
+            try {
+                const response = await fetch('/api/v1/users?limit=50&page=1');
+                const data = await response.json();
+
+                const fromApi: string[] = response.ok && data.success
+                    ? (data.data.users || []).map((u: { username: string }) => u.username)
+                    : [];
+
+                const fromComments = new Set<string>();
+                const collect = (nodes: CommentListItem[]) => {
+                    nodes.forEach((c) => {
+                        fromComments.add(c.author.username);
+                        if (c.replies.length > 0) collect(c.replies);
+                    });
+                };
+                collect(comments);
+
+                const merged = Array.from(new Set([...fromApi, ...Array.from(fromComments)])).sort((a, b) => a.localeCompare(b));
+                setMentionCandidates(merged);
+            } catch (error) {
+                console.error('Failed to load mention candidates:', error);
+            }
+        };
+
+        loadMentionCandidates();
+    }, [comments]);
 
     const createMutation = useMutation({
         mutationFn: async ({ body, parentId }: { body: string; parentId?: string }) => {
@@ -266,6 +343,7 @@ export function CommentThread({ entityType, entityId, comments }: CommentThreadP
                                     isPending={editMutation.isPending}
                                     submitLabel="Save"
                                     placeholder="Update your comment..."
+                                    mentionCandidates={mentionCandidates}
                                 />
                             ) : (
                                 <div
@@ -287,6 +365,7 @@ export function CommentThread({ entityType, entityId, comments }: CommentThreadP
                                         isPending={createMutation.isPending}
                                         submitLabel="Reply"
                                         placeholder="Reply with @username support..."
+                                        mentionCandidates={mentionCandidates}
                                     />
                                 </div>
                             )}
@@ -318,6 +397,7 @@ export function CommentThread({ entityType, entityId, comments }: CommentThreadP
                     isPending={createMutation.isPending}
                     submitLabel="Add Comment"
                     placeholder="Write a comment. Mention someone with @username"
+                    mentionCandidates={mentionCandidates}
                 />
             </div>
 

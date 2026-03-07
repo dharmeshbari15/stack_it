@@ -125,7 +125,15 @@ export async function notifyFollowersOfNewAnswer(
         select: { user_id: true }
     })
 
-    const userIds = questionFollowers.map(f => f.user_id).filter(id => id !== authorId)
+    const authorFollowers = await prisma.followUser.findMany({
+        where: { following_id: authorId },
+        select: { follower_id: true },
+    })
+
+    const questionFollowerIds = questionFollowers.map(f => f.user_id)
+    const authorFollowerIds = authorFollowers.map(f => f.follower_id)
+    const userIds = Array.from(new Set([...questionFollowerIds, ...authorFollowerIds]))
+        .filter(id => id !== authorId)
 
     if (userIds.length === 0) return
 
@@ -135,7 +143,7 @@ export async function notifyFollowersOfNewAnswer(
             user_id: userId,
             actor_id: authorId,
             type: 'NEW_ANSWER_ON_FOLLOWED_QUESTION',
-            reference_id: answerId
+            reference_id: questionId
         })),
         skipDuplicates: true
     })

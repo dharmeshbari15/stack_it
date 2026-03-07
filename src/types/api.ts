@@ -99,7 +99,7 @@ export interface CommentListItem {
  */
 export interface NotificationItem {
     id: string;
-    type: 'ANSWER' | 'COMMENT' | 'UPVOTE';
+    type: 'ANSWER' | 'MENTION' | 'SYSTEM' | 'NEW_ANSWER_ON_FOLLOWED_QUESTION' | 'NEW_QUESTION_WITH_FOLLOWED_TAG';
     is_read: boolean;
     reference_id: string;
     user_id: string;

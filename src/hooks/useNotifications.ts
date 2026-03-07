@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/react';
 
 export interface Notification {
     id: string;
-    type: 'ANSWER' | 'MENTION' | 'SYSTEM';
+    type: 'ANSWER' | 'MENTION' | 'SYSTEM' | 'NEW_ANSWER_ON_FOLLOWED_QUESTION' | 'NEW_QUESTION_WITH_FOLLOWED_TAG';
     reference_id: string;
     is_read: boolean;
     created_at: string;

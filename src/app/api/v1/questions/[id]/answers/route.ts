@@ -5,6 +5,7 @@ import { apiHandler, apiSuccess, unauthorized, notFound, badRequest } from '@/li
 import { sanitizeHtml, isValidContent } from '@/lib/sanitizer';
 import { AnswerItem } from '@/types/api';
 import { notifyFollowersOfNewAnswer } from '@/lib/follow';
+import { resolveSessionUserId } from '@/lib/auth-user';
 import * as z from 'zod';
 
 const answerSchema = z.object({
@@ -19,6 +20,11 @@ export const POST = apiHandler<{ id: string }, AnswerItem>(async (
 
     if (!session?.user) {
         throw unauthorized();
+    }
+
+    const userId = await resolveSessionUserId(session);
+    if (!userId) {
+        throw unauthorized('Unable to resolve your account. Please sign out and sign in again.');
     }
 
     const { id: questionId } = await params;
@@ -54,7 +60,7 @@ export const POST = apiHandler<{ id: string }, AnswerItem>(async (
             data: {
                 body: sanitizedBody,
                 question_id: questionId,
-                author_id: session.user.id,
+                author_id: userId,
             },
             include: {
                 author: {
@@ -67,13 +73,13 @@ export const POST = apiHandler<{ id: string }, AnswerItem>(async (
         });
 
         // 5. Create notification for question author (if not same user)
-        if (question.author_id !== session.user.id) {
+        if (question.author_id !== userId) {
             await tx.notification.create({
                 data: {
                     type: 'ANSWER',
-                    reference_id: newAnswer.id,
+                    reference_id: questionId,
                     user_id: question.author_id,
-                    actor_id: session.user.id,
+                    actor_id: userId,
                 }
             });
         }
@@ -82,7 +88,7 @@ export const POST = apiHandler<{ id: string }, AnswerItem>(async (
     });
 
     // 6. Notify followers of this question (asynchronously)
-    notifyFollowersOfNewAnswer(questionId, answer.id, session.user.id).catch(err => {
+    notifyFollowersOfNewAnswer(questionId, answer.id, userId).catch(err => {
         console.error('Failed to notify followers of new answer:', err);
     });
 

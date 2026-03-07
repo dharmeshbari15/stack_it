@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, unauthorized } from '@/lib/api-handler';
+import { resolveSessionUserId } from '@/lib/auth-user';
 import { MarkReadResponse } from '@/types/api';
 import * as z from 'zod';
 
@@ -14,6 +15,11 @@ export const PATCH = apiHandler<any, MarkReadResponse>(async (req: NextRequest) 
 
     if (!session?.user) {
         throw unauthorized();
+    }
+
+    const userId = await resolveSessionUserId(session);
+    if (!userId) {
+        throw unauthorized('Unable to resolve your account. Please sign out and sign in again.');
     }
 
     // Parse body if it exists, otherwise default to empty object
@@ -30,7 +36,7 @@ export const PATCH = apiHandler<any, MarkReadResponse>(async (req: NextRequest) 
     const { notificationIds } = readSchema.parse(body);
 
     const where: any = {
-        user_id: session.user.id,
+        user_id: userId,
         is_read: false,
     };
 

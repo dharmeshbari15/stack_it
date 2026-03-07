@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
-import { MessageSquare, AtSign, Settings, Check } from 'lucide-react';
+import { MessageSquare, AtSign, Settings, Check, Tag } from 'lucide-react';
 
 interface NotificationDropdownProps {
     onClose: () => void;
@@ -23,6 +23,58 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
             markAsRead([notification.id]);
         }
         onClose();
+    };
+
+    const getNotificationHref = (notification: Notification) => {
+        switch (notification.type) {
+            case 'ANSWER':
+            case 'NEW_ANSWER_ON_FOLLOWED_QUESTION':
+            case 'NEW_QUESTION_WITH_FOLLOWED_TAG':
+                return `/questions/${notification.reference_id}`;
+            default:
+                return `/questions/${notification.reference_id}`;
+        }
+    };
+
+    const getNotificationText = (notification: Notification) => {
+        switch (notification.type) {
+            case 'ANSWER':
+                return ' shared a new response to your question';
+            case 'NEW_ANSWER_ON_FOLLOWED_QUESTION':
+                return ' posted a new answer on a question you follow';
+            case 'NEW_QUESTION_WITH_FOLLOWED_TAG':
+                return ' asked a new question with a tag you follow';
+            case 'MENTION':
+                return ' mentioned you';
+            default:
+                return ' sent you a notification';
+        }
+    };
+
+    const getNotificationIcon = (notification: Notification) => {
+        switch (notification.type) {
+            case 'ANSWER':
+            case 'NEW_ANSWER_ON_FOLLOWED_QUESTION':
+                return <MessageSquare className="w-4 h-4" />;
+            case 'NEW_QUESTION_WITH_FOLLOWED_TAG':
+                return <Tag className="w-4 h-4" />;
+            case 'MENTION':
+                return <AtSign className="w-4 h-4" />;
+            default:
+                return <AtSign className="w-4 h-4" />;
+        }
+    };
+
+    const getNotificationIconStyle = (notification: Notification) => {
+        switch (notification.type) {
+            case 'ANSWER':
+            case 'NEW_ANSWER_ON_FOLLOWED_QUESTION':
+                return 'bg-green-100 text-green-600';
+            case 'NEW_QUESTION_WITH_FOLLOWED_TAG':
+                return 'bg-purple-100 text-purple-600';
+            default:
+                return 'bg-blue-100 text-blue-600';
+        }
     };
 
     return (
@@ -56,7 +108,7 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
                         {notifications.map((n) => (
                             <Link
                                 key={n.id}
-                                href={`/questions/${n.reference_id}`}
+                                href={getNotificationHref(n)}
                                 onClick={() => handleItemClick(n)}
                                 className={`
                                     flex items-start gap-3 p-4 transition-colors hover:bg-gray-50
@@ -65,15 +117,15 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
                             >
                                 <div className={`
                                     p-2 rounded-xl shrink-0
-                                    ${n.type === 'ANSWER' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}
+                                    ${getNotificationIconStyle(n)}
                                 `}>
-                                    {n.type === 'ANSWER' ? <MessageSquare className="w-4 h-4" /> : <AtSign className="w-4 h-4" />}
+                                    {getNotificationIcon(n)}
                                 </div>
 
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm text-gray-900 leading-snug">
                                         <span className="font-bold">{n.actor.username}</span>
-                                        {n.type === 'ANSWER' ? ' shared a new response to your question' : ' mentioned you'}
+                                        {getNotificationText(n)}
                                     </p>
                                     <p className="text-[11px] text-gray-400 mt-1">
                                         {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
