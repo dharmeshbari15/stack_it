@@ -8,6 +8,7 @@ import { Calendar, MessageSquare, HelpCircle, User as UserIcon, Trophy, Trash2, 
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { toast } from '@/lib/events';
+import { FollowButton } from '@/components/FollowButton';
 
 interface UserData {
     id: string;
@@ -164,6 +165,13 @@ export default function UserProfilePage() {
                         >
                             Share Profile
                         </button>
+                        {!isOwnProfile && (
+                            <FollowButton 
+                                entityType="user"
+                                entityId={userId as string}
+                                className="w-full md:w-auto"
+                            />
+                        )}
                         {isOwnProfile && (
                             <Link
                                 href="/settings"

@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2, Edit2 } from 'lucide-react';
 import { toast } from '@/lib/events';
+import { BookmarkButton } from './BookmarkButton';
 
 interface Author {
     id: string;
@@ -21,6 +22,8 @@ interface Question {
     answers_count: number;
     accepted_answer_id: string | null;
     created_at: string;
+    upvotes?: number;
+    votes_count?: number;
 }
 
 interface QuestionCardProps {
@@ -72,6 +75,7 @@ export function QuestionCard({ question }: QuestionCardProps) {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <BookmarkButton questionId={question.id} />
                         {isAuthor && (
                             <button
                                 onClick={handleDelete}
@@ -120,6 +124,14 @@ export function QuestionCard({ question }: QuestionCardProps) {
 
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-sm text-gray-500">
                     <div className="flex items-center gap-4">
+                        {typeof question.upvotes === 'number' && (
+                            <div className="flex items-center gap-1">
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                                </svg>
+                                <span className="font-medium">{question.upvotes}</span>
+                            </div>
+                        )}
                         <div className="flex items-center gap-1">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />

@@ -1,5 +1,6 @@
 // app/questions/page.tsx
 import { QuestionList } from '@/components/QuestionList';
+import { SearchFilters } from '@/components/SearchFilters';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 
@@ -30,7 +31,8 @@ export default function QuestionsPage() {
                 </Link>
             </header>
 
-            <div className="bg-white border border-gray-100 rounded-[2.5rem] shadow-sm overflow-hidden p-2">
+            <div className="bg-white border border-gray-100 rounded-[2.5rem] shadow-sm overflow-hidden p-6 space-y-6">
+                <SearchFilters showSearch />
                 <QuestionList />
             </div>
         </main>

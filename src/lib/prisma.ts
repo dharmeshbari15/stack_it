@@ -8,7 +8,7 @@
 // The singleton pattern prevents connection pool exhaustion during Next.js
 // hot-reloads in development, while production modules are only evaluated once.
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 

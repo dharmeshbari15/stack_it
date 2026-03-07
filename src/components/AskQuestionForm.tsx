@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Editor } from './Editor';
+import { SimilarQuestionsPanel } from './SimilarQuestionsPanel';
 
 const askQuestionSchema = z.object({
     title: z.string()
@@ -24,6 +25,7 @@ export function AskQuestionForm() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hasSimilarQuestions, setHasSimilarQuestions] = useState(false);
 
     const {
         register,
@@ -38,6 +40,10 @@ export function AskQuestionForm() {
             description: '',
         },
     });
+
+    // Watch form values for similarity checking
+    const title = useWatch({ control, name: 'title' }) || '';
+    const description = useWatch({ control, name: 'description' }) || '';
 
     const onSubmit = async (values: AskQuestionFormValues) => {
         setIsSubmitting(true);
@@ -138,6 +144,15 @@ export function AskQuestionForm() {
 
                 {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>}
             </div>
+
+            {/* Similar Questions Panel */}
+            {title.length >= 10 && description.length >= 30 && (
+                <SimilarQuestionsPanel
+                    title={title}
+                    description={description}
+                    onCheck={setHasSimilarQuestions}
+                />
+            )}
 
             <div className="flex justify-end pt-4 gap-3">
                 <button

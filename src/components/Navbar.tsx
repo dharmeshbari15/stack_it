@@ -7,10 +7,10 @@
 
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { NotificationBell } from './NotificationBell';
-import { User, LogOut, ChevronDown, Settings } from 'lucide-react';
+import { User, LogOut, ChevronDown, Settings, Heart } from 'lucide-react';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -123,9 +123,30 @@ function NavLink({ href, label }: { href: string; label: string }) {
 export default function Navbar() {
     const { data: session, status } = useSession();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const menuRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const isLoggedIn = status === 'authenticated';
     const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? '?';
+
+    // Initialize search query from URL
+    useEffect(() => {
+        const urlSearch = searchParams.get('search');
+        if (urlSearch) {
+            setSearchQuery(urlSearch);
+        }
+    }, [searchParams]);
+
+    // Handle search submission
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            router.push(`/questions?search=${encodeURIComponent(searchQuery.trim())}`);
+        } else {
+            router.push('/questions');
+        }
+    };
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -152,10 +173,11 @@ export default function Navbar() {
                     <NavLink href="/questions" label="Questions" />
                     <NavLink href="/tags" label="Tags" />
                     <NavLink href="/users" label="Users" />
+                    <NavLink href="/leaderboard" label="Rankings" />
                 </div>
 
                 {/* Search bar */}
-                <div className="relative mx-4 hidden flex-1 md:flex">
+                <form onSubmit={handleSearch} className="relative mx-4 hidden flex-1 md:flex">
                     <label htmlFor="navbar-search" className="sr-only">
                         Search questions, tags, users
                     </label>
@@ -165,10 +187,12 @@ export default function Navbar() {
                     <input
                         id="navbar-search"
                         type="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search questions, tags, users..."
                         className="w-full rounded-full border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-4 text-sm text-gray-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
                     />
-                </div>
+                </form>
 
                 {/* Right-side actions */}
                 <div className="ml-auto flex items-center gap-3">
@@ -196,12 +220,30 @@ export default function Navbar() {
                                         </div>
 
                                         <Link
-                                            href={`/users/${session?.user?.id}`}
+                                            href="/users/me"
                                             onClick={() => setIsMenuOpen(false)}
                                             className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                         >
                                             <User className="h-4 w-4" />
                                             View Profile
+                                        </Link>
+
+                                        <Link
+                                            href="/dashboard"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                                        >
+                                            <span className="text-base">📊</span>
+                                            Reputation Dashboard
+                                        </Link>
+
+                                        <Link
+                                            href="/saved-questions"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 hover:bg-yellow-50 hover:text-yellow-600 transition-colors"
+                                        >
+                                            <span className="text-base">★</span>
+                                            Saved Questions
                                         </Link>
 
                                         <Link
@@ -211,6 +253,15 @@ export default function Navbar() {
                                         >
                                             <Settings className="h-4 w-4" />
                                             Settings
+                                        </Link>
+
+                                        <Link
+                                            href="/follows"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 hover:bg-pink-50 hover:text-pink-600 transition-colors"
+                                        >
+                                            <Heart className="h-4 w-4" />
+                                            Following
                                         </Link>
 
                                         <div className="my-1 border-t border-gray-50" />

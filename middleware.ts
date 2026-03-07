@@ -5,12 +5,20 @@
 // Public routes (home, questions list, tags, individual question pages) are
 // always accessible without a session (as per PRD: guest users can browse).
 
-import { auth } from './auth';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from './src/lib/rate-limit';
 
-export default auth((req) => {
-    const isLoggedIn = !!req.auth;
+function hasSessionCookie(req: NextRequest): boolean {
+    return Boolean(
+        req.cookies.get('authjs.session-token') ||
+            req.cookies.get('__Secure-authjs.session-token') ||
+            req.cookies.get('next-auth.session-token') ||
+            req.cookies.get('__Secure-next-auth.session-token')
+    );
+}
+
+export default function middleware(req: NextRequest) {
+    const isLoggedIn = hasSessionCookie(req);
     const pathname = req.nextUrl.pathname;
     const method = req.method;
 
@@ -73,7 +81,7 @@ export default auth((req) => {
     }
 
     return NextResponse.next();
-});
+}
 
 // Only run middleware on app pages and specific API routes
 export const config = {

@@ -8,7 +8,7 @@
 //  - Email and username uniqueness checked with a descriptive 409 conflict error
 //  - bcrypt cost factor 12 — strong against brute-force while acceptable latency (~300ms)
 //  - Response never includes password_hash
-//  - Rate limiting should be applied at the edge (Vercel middleware) in production
+//  - Rate limiting should be applied at the edge (middleware) in production
 
 import { z } from 'zod';
 import { hash } from 'bcryptjs';

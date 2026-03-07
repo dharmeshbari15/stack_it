@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, badRequest, notFound, unauthorized } from '@/lib/api-handler';
 import { parseBody } from '@/lib/validate';
+import { awardReputation, reverseReputation } from '@/lib/reputation';
+import { resolveSessionUserId } from '@/lib/auth-user';
 import { VoteResponse } from '@/types/api';
 import * as z from 'zod';
 
@@ -16,15 +18,24 @@ export const POST = apiHandler<{ id: string }, VoteResponse>(async (
 ) => {
     const session = await auth();
 
-    if (!session?.user?.id) {
+    if (!session?.user) {
         throw unauthorized();
+    }
+
+    // Resolve actual database user ID
+    const userId = await resolveSessionUserId(session);
+    if (!userId) {
+        console.error('Vote failed: Unable to resolve user ID from session:', {
+            sessionUserId: session.user?.id,
+            sessionEmail: session.user?.email,
+        });
+        throw unauthorized('Your session is invalid. Please sign out and sign in again to continue.');
     }
 
     const { id: answerId } = await params;
 
     // 1. Validate request body
     const { value: newValue } = await parseBody(req, voteSchema);
-    const userId = session.user.id;
 
     try {
         // 2. Perform voting logic in a transaction
@@ -32,7 +43,7 @@ export const POST = apiHandler<{ id: string }, VoteResponse>(async (
             // Check if answer exists
             const answer = await tx.answer.findUnique({
                 where: { id: answerId },
-                select: { id: true, deleted_at: true, score: true }
+                select: { id: true, deleted_at: true, score: true, author_id: true }
             });
 
             if (!answer || answer.deleted_at) {
@@ -50,6 +61,8 @@ export const POST = apiHandler<{ id: string }, VoteResponse>(async (
             });
 
             let scoreDelta = 0;
+            let reputationChange: 'add' | 'remove' | 'switch' | null = null;
+            let reputationType: 'upvote' | 'downvote' | null = null;
 
             if (existingVote) {
                 if (existingVote.value === newValue) {
@@ -63,6 +76,8 @@ export const POST = apiHandler<{ id: string }, VoteResponse>(async (
                         },
                     });
                     scoreDelta = -newValue;
+                    reputationChange = 'remove';
+                    reputationType = existingVote.value === 1 ? 'upvote' : 'downvote';
                 } else {
                     // Switch vote: update value
                     await tx.vote.update({
@@ -75,6 +90,8 @@ export const POST = apiHandler<{ id: string }, VoteResponse>(async (
                         data: { value: newValue },
                     });
                     scoreDelta = newValue * 2; // e.g. from -1 to 1 is +2
+                    reputationChange = 'switch';
+                    reputationType = newValue === 1 ? 'upvote' : 'downvote';
                 }
             } else {
                 // New vote
@@ -86,10 +103,12 @@ export const POST = apiHandler<{ id: string }, VoteResponse>(async (
                     },
                 });
                 scoreDelta = newValue;
+                reputationChange = 'add';
+                reputationType = newValue === 1 ? 'upvote' : 'downvote';
             }
 
             // Update answer score using atomic increment
-            return tx.answer.update({
+            const updatedAnswer = await tx.answer.update({
                 where: { id: answerId },
                 data: {
                     score: {
@@ -101,6 +120,27 @@ export const POST = apiHandler<{ id: string }, VoteResponse>(async (
                     score: true,
                 }
             });
+
+            // Award/remove reputation to answer author
+            if (reputationChange && answer.author_id !== userId) {
+                if (reputationChange === 'add') {
+                    // New vote: award reputation
+                    const reason = reputationType === 'upvote' ? 'ANSWER_UPVOTE' : 'ANSWER_DOWNVOTE';
+                    await awardReputation(tx, answer.author_id, reason, answerId);
+                } else if (reputationChange === 'remove') {
+                    // Vote removed: reverse reputation (remove what was originally awarded)
+                    const originalReason = reputationType === 'upvote' ? 'ANSWER_UPVOTE' : 'ANSWER_DOWNVOTE';
+                    await reverseReputation(tx, answer.author_id, originalReason, answerId);
+                } else if (reputationChange === 'switch') {
+                    // Vote switched: reverse old vote and award new vote
+                    const oldReason = reputationType === 'upvote' ? 'ANSWER_DOWNVOTE' : 'ANSWER_UPVOTE';
+                    const newReason = reputationType === 'upvote' ? 'ANSWER_UPVOTE' : 'ANSWER_DOWNVOTE';
+                    await reverseReputation(tx, answer.author_id, oldReason, answerId);
+                    await awardReputation(tx, answer.author_id, newReason, answerId);
+                }
+            }
+
+            return updatedAnswer;
         });
 
         return apiSuccess(updatedAnswer);

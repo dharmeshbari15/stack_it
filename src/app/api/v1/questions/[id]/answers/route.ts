@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, unauthorized, notFound, badRequest } from '@/lib/api-handler';
 import { sanitizeHtml, isValidContent } from '@/lib/sanitizer';
 import { AnswerItem } from '@/types/api';
+import { notifyFollowersOfNewAnswer } from '@/lib/follow';
 import * as z from 'zod';
 
 const answerSchema = z.object({
@@ -78,6 +79,11 @@ export const POST = apiHandler<{ id: string }, AnswerItem>(async (
         }
 
         return newAnswer as AnswerItem;
+    });
+
+    // 6. Notify followers of this question (asynchronously)
+    notifyFollowersOfNewAnswer(questionId, answer.id, session.user.id).catch(err => {
+        console.error('Failed to notify followers of new answer:', err);
     });
 
     return apiSuccess(answer, 201);

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { QuestionList } from '@/components/QuestionList';
+import { SearchFilters } from '@/components/SearchFilters';
 import { auth } from '@/auth';
 
 export default async function Home() {
@@ -39,15 +40,18 @@ export default async function Home() {
 
       {/* Main Content Area */}
       <div className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">Latest Questions</h2>
-            <div className="flex gap-2">
-              <span className="text-sm text-gray-500">Sort by:</span>
-              <span className="text-sm font-medium text-blue-600">Newest</span>
-            </div>
+            <Link
+              href="/questions"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              View all →
+            </Link>
           </div>
 
+          <SearchFilters />
           <QuestionList />
         </div>
       </div>

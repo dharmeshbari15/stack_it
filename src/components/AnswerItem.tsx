@@ -1,5 +1,4 @@
 import { formatDistanceToNow } from 'date-fns';
-import DOMPurify from 'isomorphic-dompurify';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
@@ -8,6 +7,8 @@ import { toast } from '@/lib/events';
 import { Trash2, Edit2, X, Check } from 'lucide-react';
 import { AnswerListItem } from '@/types/api';
 import { Editor } from './Editor';
+import { CommentThread } from './CommentThread';
+import { RichContentRenderer } from './RichContentRenderer';
 
 interface AnswerItemProps {
     answer: AnswerListItem;
@@ -22,7 +23,6 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [editBody, setEditBody] = useState(answer.body);
-    const sanitizedBody = DOMPurify.sanitize(answer.body);
 
     const isQuestionAuthor = session?.user?.id === questionAuthorId;
     const isAnswerAuthor = session?.user?.id === answer.author.id;
@@ -285,10 +285,7 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
                             </div>
                         </div>
                     ) : (
-                        <div
-                            className="prose prose-sm sm:prose-base max-w-none text-gray-800 leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-                        />
+                        <RichContentRenderer html={answer.body} />
                     )}
 
                     <div className="flex flex-wrap items-center justify-end gap-6 pt-4 border-t border-gray-100/50">
@@ -327,6 +324,14 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
                                 </button>
                             </div>
                         )}
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-100">
+                        <CommentThread
+                            entityType="answer"
+                            entityId={answer.id}
+                            comments={answer.comments}
+                        />
                     </div>
                 </div>
             </div>

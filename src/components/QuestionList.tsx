@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
 import { QuestionCard } from './QuestionCard';
 
 interface QuestionsResponse {
@@ -16,12 +17,29 @@ interface QuestionsResponse {
 
 export function QuestionList() {
     const [page, setPage] = useState(1);
+    const searchParams = useSearchParams();
+    const search = searchParams.get('search') || '';
+    const tag = searchParams.get('tag') || '';
+    const sort = searchParams.get('sort') || 'newest';
     const limit = 10;
 
+    // Reset page to 1 when search, tag, or sort changes
+    useEffect(() => {
+        setPage(1);
+    }, [search, tag, sort]);
+
     const { data, isLoading, isError, error } = useQuery<QuestionsResponse>({
-        queryKey: ['questions', page],
+        queryKey: ['questions', page, search, tag, sort],
         queryFn: async () => {
-            const res = await fetch(`/api/v1/questions?page=${page}&limit=${limit}`);
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: limit.toString(),
+            });
+            if (search) params.append('search', search);
+            if (tag) params.append('tag', tag);
+            if (sort) params.append('sort', sort);
+            
+            const res = await fetch(`/api/v1/questions?${params.toString()}`);
             if (!res.ok) throw new Error('Failed to fetch questions');
             return res.json();
         },
@@ -51,16 +69,37 @@ export function QuestionList() {
     if (questions.length === 0) {
         return (
             <div className="rounded-xl bg-gray-50 border border-dashed border-gray-300 p-12 text-center">
-                <h3 className="text-lg font-medium text-gray-900">No questions yet</h3>
-                <p className="text-gray-600 mt-2">Be the first to ask a question on StackIt!</p>
+                <h3 className="text-lg font-medium text-gray-900">
+                    {search ? 'No questions found' : 'No questions yet'}
+                </h3>
+                <p className="text-gray-600 mt-2">
+                    {search 
+                        ? `No results found for "${search}". Try a different search term.`
+                        : 'Be the first to ask a question on StackIt!'}
+                </p>
             </div>
         );
     }
 
     return (
         <div className="space-y-8">
-            <div className="space-y-4">
-                {questions.map((question) => (
+            {(search || tag) && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>Filtered by:</span>
+                    {search && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-blue-700 font-medium">
+                            Search: "{search}"
+                        </span>
+                    )}
+                    {tag && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-3 py-1 text-purple-700 font-medium">
+                            Tag: {tag}
+                        </span>
+                    )}
+                </div>
+            )}
+            
+            <div className="space-y-4">{questions.map((question) => (
                     <QuestionCard key={question.id} question={question} />
                 ))}
             </div>

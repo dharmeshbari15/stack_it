@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, notFound, unauthorized } from '@/lib/api-handler';
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
+import { createAnswerVersion } from '@/lib/version-control';
 
 export const DELETE = apiHandler<{ id: string }, any>(async (req: NextRequest, { params }) => {
     const { id } = await params;
@@ -42,7 +43,7 @@ export const PATCH = apiHandler<{ id: string }, any>(async (req: NextRequest, { 
 
     const answer = await prisma.answer.findUnique({
         where: { id },
-        select: { author_id: true, deleted_at: true }
+        select: { author_id: true, deleted_at: true, body: true }
     });
 
     if (!answer || answer.deleted_at) {
@@ -63,6 +64,14 @@ export const PATCH = apiHandler<{ id: string }, any>(async (req: NextRequest, { 
     if (!isValidContent(sanitizedBody)) {
         throw new Error('Invalid content');
     }
+
+    // Create a version before updating (capture current state)
+    await createAnswerVersion(
+        id,
+        answer.body,
+        session.user.id,
+        body.edit_reason || undefined
+    );
 
     await prisma.answer.update({
         where: { id },

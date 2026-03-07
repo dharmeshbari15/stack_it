@@ -25,10 +25,14 @@ export interface QuestionListItem {
     tags: string[];
     answers_count: number;
     accepted_answer_id: string | null;
+    duplicate_of_id: string | null;
     created_at: string | Date;
 }
 
 export interface QuestionDetail extends Omit<QuestionListItem, 'answers_count'> {
+    score?: number;
+    userVote?: number;
+    comments: CommentListItem[];
     answers: AnswerListItem[];
 }
 
@@ -70,6 +74,24 @@ export interface AnswerListItem {
         username: string;
     };
     userVote: number;
+    comments: CommentListItem[];
+}
+
+export interface CommentListItem {
+    id: string;
+    body: string;
+    created_at: string | Date;
+    updated_at: string | Date;
+    parent_id: string | null;
+    author: {
+        id: string;
+        username: string;
+    };
+    mentions: {
+        id: string;
+        username: string;
+    }[];
+    replies: CommentListItem[];
 }
 
 /**
@@ -155,4 +177,49 @@ export interface AcceptAnswerResponse {
 export interface VoteResponse {
     id: string;
     score: number;
+}
+
+/**
+ * Follow System Data Types
+ */
+export interface FollowResponse {
+    success: boolean;
+    is_following: boolean;
+}
+
+export interface FollowedTagsResponse {
+    tags: {
+        id: string;
+        name: string;
+        created_at: string | Date;
+    }[];
+}
+
+export interface FollowedQuestionsResponse {
+    questions: Array<{
+        id: string;
+        title: string;
+        author: {
+            id: string;
+            username: string;
+        };
+        created_at: string | Date;
+    }>;
+}
+
+export interface FollowedUsersResponse {
+    users: Array<{
+        id: string;
+        username: string;
+        _count?: {
+            questions?: number;
+            answers?: number;
+        };
+        created_at: string | Date;
+    }>;
+}
+
+export interface UserFollowStats {
+    following_count: number;
+    followers_count: number;
 }

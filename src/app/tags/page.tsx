@@ -3,8 +3,8 @@
 // app/tags/page.tsx
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
-import { Hash, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { TagCard } from '@/components/TagCard';
 
 interface TagData {
     id: string;
@@ -59,30 +59,12 @@ export default function TagsPage() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredTags.map((tag) => (
-                        <Link
+                        <TagCard
                             key={tag.id}
-                            href={`/questions?tag=${tag.name}`}
-                            className="group relative bg-white border border-gray-100 p-6 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all"
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                    <Hash className="h-5 w-5" />
-                                </div>
-                                <span className="text-2xl font-black text-gray-100 group-hover:text-blue-50 transition-colors">
-                                    #{tag.questionCount}
-                                </span>
-                            </div>
-                            <h2 className="text-xl font-black text-gray-900 mb-1 capitalize">
-                                {tag.name}
-                            </h2>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                {tag.questionCount} {tag.questionCount === 1 ? 'Question' : 'Questions'}
-                            </p>
-
-                            <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="h-2 w-2 rounded-full bg-blue-500" />
-                            </div>
-                        </Link>
+                            id={tag.id}
+                            name={tag.name}
+                            questionCount={tag.questionCount}
+                        />
                     ))}
                 </div>
             )}

@@ -3,14 +3,19 @@
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
-import DOMPurify from 'isomorphic-dompurify';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Edit2, X, Check } from 'lucide-react';
+import { Edit2, X, Check, AlertCircle, ExternalLink } from 'lucide-react';
 import { toast } from '@/lib/events';
 import { QuestionDetail } from '@/types/api';
 import { Editor } from './Editor';
 import { TagInput } from './TagInput';
+import { CommentThread } from './CommentThread';
+import { BookmarkButton } from './BookmarkButton';
+import { FollowButton } from './FollowButton';
+import { MarkDuplicateButton } from './MarkDuplicateButton';
+import { RichContentRenderer } from './RichContentRenderer';
 
 interface QuestionContentProps {
     question: Omit<QuestionDetail, 'answers'>;
@@ -18,6 +23,7 @@ interface QuestionContentProps {
 
 export function QuestionContent({ question }: QuestionContentProps) {
     const { data: session } = useSession();
+    const router = useRouter();
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(question.title);
@@ -25,7 +31,8 @@ export function QuestionContent({ question }: QuestionContentProps) {
     const [tags, setTags] = useState(question.tags);
 
     const isAuthor = session?.user?.id === question.author.id;
-    const sanitizedContent = DOMPurify.sanitize(question.description);
+    const isAdmin = session?.user?.role === 'ADMIN';
+    const isDuplicate = !!question.duplicate_of_id;
 
     const updateMutation = useMutation({
         mutationFn: async () => {
@@ -52,8 +59,104 @@ export function QuestionContent({ question }: QuestionContentProps) {
         },
     });
 
+    const voteMutation = useMutation({
+        mutationFn: async (voteType: 'upvote' | 'downvote') => {
+            if (!session) {
+                router.push(`/login?callbackUrl=/questions/${question.id}`);
+                throw new Error('Auth required');
+            }
+
+            const response = await fetch(`/api/v1/questions/${question.id}/vote`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ voteType }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                const msg = errorData.error?.message || 'Voting failed';
+                toast.error(msg);
+                throw new Error(msg);
+            }
+
+            return response.json();
+        },
+        onMutate: async (newVoteType) => {
+            await queryClient.cancelQueries({ queryKey: ['question', question.id] });
+            const previousData = queryClient.getQueryData<any>(['question', question.id]);
+
+            if (!previousData?.data) {
+                return { previousData };
+            }
+
+            const currentVote = previousData.data.userVote ?? 0;
+            const nextVote = newVoteType === 'upvote' ? 1 : -1;
+            let scoreDelta = 0;
+
+            if (currentVote === nextVote) {
+                scoreDelta = -nextVote;
+            } else if (currentVote === 0) {
+                scoreDelta = nextVote;
+            } else {
+                scoreDelta = nextVote * 2;
+            }
+
+            queryClient.setQueryData(['question', question.id], {
+                ...previousData,
+                data: {
+                    ...previousData.data,
+                    score: (previousData.data.score ?? 0) + scoreDelta,
+                    userVote: currentVote === nextVote ? 0 : nextVote,
+                },
+            });
+
+            return { previousData };
+        },
+        onError: (error: any, _, context: any) => {
+            if (error.message !== 'Auth required' && context?.previousData) {
+                queryClient.setQueryData(['question', question.id], context.previousData);
+            }
+        },
+        onSuccess: () => {
+            toast.success('Vote recorded');
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['question', question.id] });
+            queryClient.invalidateQueries({ queryKey: ['questions'] });
+        },
+    });
+
+    const handleVote = (voteType: 'upvote' | 'downvote') => {
+        voteMutation.mutate(voteType);
+    };
+
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
+        <div className="space-y-6">
+            {/* Duplicate Banner */}
+            {isDuplicate && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-orange-900 mb-2">
+                                This question has been marked as a duplicate
+                            </h3>
+                            <p className="text-sm text-orange-800 mb-3">
+                                This question has already been answered. Please refer to the canonical question for the solution.
+                            </p>
+                            <Link
+                                href={`/questions/${question.duplicate_of_id}`}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-orange-300 text-orange-800 rounded-lg hover:bg-orange-50 transition text-sm font-medium"
+                            >
+                                View Original Question
+                                <ExternalLink className="h-4 w-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
             <div className="flex flex-col gap-6">
                 {isEditing ? (
                     <div className="space-y-6">
@@ -104,7 +207,44 @@ export function QuestionContent({ question }: QuestionContentProps) {
                 ) : (
                     <>
                         <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1">
+                            <div className="flex items-start gap-4 flex-1">
+                                <div className="flex flex-col items-center gap-2">
+                                    <button
+                                        onClick={() => handleVote('upvote')}
+                                        disabled={voteMutation.isPending}
+                                        title="Upvote"
+                                        className={`p-1.5 rounded-lg transition-colors ${question.userVote === 1
+                                            ? 'bg-blue-100 text-blue-600'
+                                            : 'hover:bg-gray-100 text-gray-400 hover:text-blue-600'
+                                            }`}
+                                    >
+                                        <svg className="w-6 h-6" fill={question.userVote === 1 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    </button>
+
+                                    <span className={`text-xl font-black tabular-nums ${question.userVote === 1 ? 'text-blue-600' :
+                                        question.userVote === -1 ? 'text-red-600' : 'text-gray-900'
+                                        }`}>
+                                        {question.score ?? 0}
+                                    </span>
+
+                                    <button
+                                        onClick={() => handleVote('downvote')}
+                                        disabled={voteMutation.isPending}
+                                        title="Downvote"
+                                        className={`p-1.5 rounded-lg transition-colors ${question.userVote === -1
+                                            ? 'bg-red-100 text-red-600'
+                                            : 'hover:bg-gray-100 text-gray-400 hover:text-red-600'
+                                            }`}
+                                    >
+                                        <svg className="w-6 h-6" fill={question.userVote === -1 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div className="flex-1">
                                 <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-4">
                                     {question.title}
                                 </h1>
@@ -123,21 +263,37 @@ export function QuestionContent({ question }: QuestionContentProps) {
                                 </div>
                             </div>
 
-                            {isAuthor && (
-                                <button
-                                    onClick={() => setIsEditing(true)}
-                                    className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                                    title="Edit Question"
-                                >
-                                    <Edit2 className="h-4 w-4" />
-                                    <span>Edit</span>
-                                </button>
-                            )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <BookmarkButton questionId={question.id} />
+                                <FollowButton 
+                                    entityType="question" 
+                                    entityId={question.id}
+                                    className="text-xs"
+                                />
+                                {isAdmin && (
+                                    <MarkDuplicateButton
+                                        questionId={question.id}
+                                        isAdmin={isAdmin}
+                                        isDuplicate={isDuplicate}
+                                        duplicateOfId={question.duplicate_of_id}
+                                    />
+                                )}
+                                {isAuthor && (
+                                    <button
+                                        onClick={() => setIsEditing(true)}
+                                        className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                                        title="Edit Question"
+                                    >
+                                        <Edit2 className="h-4 w-4" />
+                                        <span>Edit</span>
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="prose prose-blue max-w-none text-gray-800"
-                            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                        />
+                        <RichContentRenderer html={question.description} />
 
                         <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
                             {question.tags.map((tag) => (
@@ -150,35 +306,18 @@ export function QuestionContent({ question }: QuestionContentProps) {
                                 </Link>
                             ))}
                         </div>
+
+                        <div className="pt-6 border-t border-gray-100">
+                            <CommentThread
+                                entityType="question"
+                                entityId={question.id}
+                                comments={question.comments}
+                            />
+                        </div>
                     </>
                 )}
             </div>
-
-            <style jsx global>{`
-        .prose pre {
-          background: #1e1e1e;
-          color: #d4d4d4;
-          padding: 1.25rem;
-          border-radius: 0.75rem;
-          font-family: 'Fira Code', 'Courier New', Courier, monospace;
-          margin: 1.5rem 0;
-          overflow-x: auto;
-        }
-        .prose blockquote {
-          border-left: 4px solid #3b82f6;
-          padding-left: 1.5rem;
-          color: #4b5563;
-          font-style: italic;
-          margin: 1.5rem 0;
-        }
-        .prose code:not(pre code) {
-          background: #f3f4f6;
-          padding: 0.2rem 0.4rem;
-          border-radius: 0.25rem;
-          font-size: 0.875em;
-          color: #1f2937;
-        }
-      `}</style>
+            </div>
         </div>
     );
 }

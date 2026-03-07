@@ -3,13 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { apiHandler, apiSuccess, notFound, unauthorized, badRequest } from '@/lib/api-handler';
 import { UserStats, UpdateUserResponse } from '@/types/api';
 import { auth } from '@/auth';
+import { resolveSessionUserId } from '@/lib/auth-user';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 
 export const GET = apiHandler<{ id: string }, UserStats>(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id: userId } = await params;
     const session = await auth();
-    const isOwner = session?.user?.id === userId;
+    const sessionUserId = session?.user ? await resolveSessionUserId(session) : null;
+    const isOwner = sessionUserId === userId;
 
     // Use raw SQL to bypass Prisma model limitations for the new 2FA field
     const users = await prisma.$queryRaw<any[]>`
@@ -57,7 +59,12 @@ export const PATCH = apiHandler<{ id: string }, UpdateUserResponse>(async (req: 
     const { id: userId } = await params;
     const session = await auth();
 
-    if (!session?.user?.id || session.user.id !== userId) {
+    if (!session?.user) {
+        throw unauthorized('You must be signed in.');
+    }
+
+    const sessionUserId = await resolveSessionUserId(session);
+    if (!sessionUserId || sessionUserId !== userId) {
         throw unauthorized('You can only update your own profile.');
     }
 

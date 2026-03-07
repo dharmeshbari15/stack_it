@@ -1,65 +1,90 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                 String         @id @default(uuid())
-  username           String         @unique @db.VarChar(255)
-  email              String         @unique @db.VarChar(255)
-  password_hash      String         @db.VarChar(255)
-  role               Role           @default(USER)
-  two_factor_enabled Boolean        @default(false)
-  created_at         DateTime       @default(now())
+  id                 String              @id @default(uuid())
+  username           String              @unique @db.VarChar(255)
+  email              String              @unique @db.VarChar(255)
+  password_hash      String              @db.VarChar(255)
+  role               Role                @default(USER)
+  reputation         Int                 @default(0)
+  two_factor_enabled Boolean             @default(false)
+  created_at         DateTime            @default(now())
   answers            Answer[]
-  acted_upon         Notification[] @relation("ActorNotifications")
-  notifications      Notification[] @relation("UserNotifications")
+  acted_upon         Notification[]      @relation("ActorNotifications")
+  notifications      Notification[]      @relation("UserNotifications")
   questions          Question[]
   votes              Vote[]
+  question_votes     QuestionVote[]
+  reputation_history ReputationHistory[]
+  comments           Comment[]
+  bookmarks          Bookmark[]
+  marked_duplicates  DuplicateLink[]
+  question_edits     QuestionVersion[]  @relation("QuestionEdits")
+  answer_edits       AnswerVersion[]    @relation("AnswerEdits")
+  followed_tags      FollowTag[]
+  followed_questions FollowQuestion[]
+  followed_by        FollowUser[]        @relation("FollowedUser")
+  follows            FollowUser[]        @relation("FollowingUser")
 
   @@index([username])
   @@index([email])
+  @@index([reputation])
 }
 
-model Question {
-  id                 String        @id @default(uuid())
-  title              String        @db.VarChar(255)
-  description        String
-  accepted_answer_id String?
-  created_at         DateTime      @default(now())
-  deleted_at         DateTime?
-  author_id          String
-  answers            Answer[]
-  author             User          @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  tags               QuestionTag[]
-
-  @@index([created_at])
-}
 
 model Answer {
-  id          String    @id @default(uuid())
+  id          String          @id @default(uuid())
   body        String
-  score       Int       @default(0)
-  created_at  DateTime  @default(now())
+  score       Int             @default(0)
+  created_at  DateTime        @default(now())
   deleted_at  DateTime?
   question_id String
   author_id   String
-  author      User      @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  question    Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  author      User            @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  question    Question        @relation(fields: [question_id], references: [id], onDelete: Cascade)
   votes       Vote[]
+  comments    Comment[]
+  versions    AnswerVersion[]
 
   @@index([question_id])
   @@index([score])
+}
+
+model Comment {
+  id          String    @id @default(uuid())
+  body        String
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+  question_id String?
+  answer_id   String?
+  author_id   String
+  parent_id   String?
+  author      User      @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  question    Question? @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  answer      Answer?   @relation(fields: [answer_id], references: [id], onDelete: Cascade)
+  parent      Comment?  @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+
+  @@index([question_id])
+  @@index([answer_id])
+  @@index([author_id])
+  @@index([parent_id])
+  @@index([created_at])
 }
 
 model Tag {
   id        String        @id @default(uuid())
   name      String        @unique @db.VarChar(255)
   questions QuestionTag[]
+  followers FollowTag[]
 
   @@index([name])
 }
@@ -74,6 +99,73 @@ model QuestionTag {
   @@index([tag_id])
 }
 
+// ─── Follow System Models ──────────────────────────────────────────────────────
+
+model FollowTag {
+  user_id    String
+  tag_id     String
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, tag_id])
+  @@index([user_id, created_at])
+  @@index([tag_id, created_at])
+}
+
+model FollowQuestion {
+  user_id    String
+  question_id String
+  created_at DateTime @default(now())
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  question   Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, question_id])
+  @@index([user_id, created_at])
+  @@index([question_id, created_at])
+}
+
+model FollowUser {
+  follower_id String
+  following_id String
+  created_at  DateTime @default(now())
+  follower    User     @relation("FollowingUser", fields: [follower_id], references: [id], onDelete: Cascade)
+  following   User     @relation("FollowedUser", fields: [following_id], references: [id], onDelete: Cascade)
+
+  @@unique([follower_id, following_id])
+  @@index([follower_id, created_at])
+  @@index([following_id, created_at])
+}
+
+model Question {
+  id                 String            @id @default(uuid())
+  title              String            @db.VarChar(255)
+  description        String
+  score              Int               @default(0)
+  accepted_answer_id String?
+  duplicate_of_id    String?
+  created_at         DateTime          @default(now())
+  deleted_at         DateTime?
+  author_id          String
+  answers            Answer[]
+  author             User              @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  tags               QuestionTag[]
+  votes              QuestionVote[]
+  comments           Comment[]
+  bookmarks          Bookmark[]
+  followers          FollowQuestion[]
+  embedding          QuestionEmbedding?
+  duplicate_of       Question?         @relation("DuplicateRelation", fields: [duplicate_of_id], references: [id], onDelete: SetNull)
+  duplicates         Question[]        @relation("DuplicateRelation")
+  duplicate_links    DuplicateLink[]   @relation("DuplicateQuestion")
+  canonical_for      DuplicateLink[]   @relation("CanonicalQuestion")
+  versions           QuestionVersion[]
+
+  @@index([created_at])
+  @@index([score])
+  @@index([duplicate_of_id])
+}
+
 model Vote {
   user_id   String
   answer_id String
@@ -82,6 +174,17 @@ model Vote {
   user      User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, answer_id])
+}
+
+model QuestionVote {
+  user_id     String
+  question_id String
+  value       Int      @db.SmallInt
+  created_at  DateTime @default(now())
+  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, question_id])
 }
 
 model Notification {
@@ -98,6 +201,32 @@ model Notification {
   @@index([user_id, is_read])
 }
 
+model ReputationHistory {
+  id           String               @id @default(uuid())
+  user_id      String
+  change       Int
+  reason       ReputationChangeType
+  reference_id String?
+  created_at   DateTime             @default(now())
+  user         User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+}
+
+model Bookmark {
+  id          String    @id @default(uuid())
+  user_id     String
+  question_id String
+  custom_tag  String?   @db.VarChar(100)
+  created_at  DateTime  @default(now())
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  question    Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, question_id])
+  @@index([user_id, created_at])
+  @@index([user_id, custom_tag])
+}
+
 enum Role {
   GUEST
   USER
@@ -108,4 +237,94 @@ enum NotificationType {
   ANSWER
   MENTION
   SYSTEM
+  NEW_ANSWER_ON_FOLLOWED_QUESTION
+  NEW_QUESTION_WITH_FOLLOWED_TAG
 }
+
+enum ReputationChangeType {
+  QUESTION_UPVOTE
+  QUESTION_DOWNVOTE
+  ANSWER_UPVOTE
+  ANSWER_DOWNVOTE
+  ANSWER_ACCEPTED
+  ANSWER_UNACCEPTED
+}
+
+// Duplicate Detection Models
+
+model QuestionEmbedding {
+  id             String   @id @default(uuid())
+  question_id    String   @unique
+  embedding      String   // JSON array of floats [0.1, 0.2, ...]
+  model_version  String   @default("text-embedding-3-small") @db.VarChar(50)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  question       Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@index([question_id])
+  @@index([created_at])
+}
+
+model DuplicateLink {
+  id                 String    @id @default(uuid())
+  duplicate_id       String
+  canonical_id       String
+  marked_by_id       String
+  similarity_score   Float?    @db.DoublePrecision
+  marked_at          DateTime  @default(now())
+  notes              String?   @db.Text
+  duplicate_question Question  @relation("DuplicateQuestion", fields: [duplicate_id], references: [id], onDelete: Cascade)
+  canonical_question Question  @relation("CanonicalQuestion", fields: [canonical_id], references: [id], onDelete: Cascade)
+  marked_by          User      @relation(fields: [marked_by_id], references: [id], onDelete: Cascade)
+
+  @@unique([duplicate_id, canonical_id])
+  @@index([duplicate_id])
+  @@index([canonical_id])
+  @@index([marked_by_id])
+  @@index([marked_at])
+}
+
+enum DuplicateStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+// ─── Edit History & Version Control ───────────────────────────────────────────
+
+model QuestionVersion {
+  id             String    @id @default(uuid())
+  question_id    String
+  version_number Int
+  title          String    @db.VarChar(255)
+  description    String
+  tags           String[]  // JSON array of tag names
+  edited_by_id   String
+  edited_at      DateTime  @default(now())
+  edit_reason    String?   @db.VarChar(500)
+  
+  question       Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  edited_by      User      @relation("QuestionEdits", fields: [edited_by_id], references: [id], onDelete: Restrict)
+
+  @@unique([question_id, version_number])
+  @@index([question_id, edited_at])
+  @@index([edited_by_id])
+}
+
+model AnswerVersion {
+  id             String    @id @default(uuid())
+  answer_id      String
+  version_number Int
+  body           String
+  edited_by_id   String
+  edited_at      DateTime  @default(now())
+  edit_reason    String?   @db.VarChar(500)
+  
+  answer         Answer    @relation(fields: [answer_id], references: [id], onDelete: Cascade)
+  edited_by      User      @relation("AnswerEdits", fields: [edited_by_id], references: [id], onDelete: Restrict)
+
+  @@unique([answer_id, version_number])
+  @@index([answer_id, edited_at])
+  @@index([edited_by_id])
+}
+
