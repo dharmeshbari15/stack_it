@@ -183,7 +183,6 @@ export interface VoteResponse {
  * Follow System Data Types
  */
 export interface FollowResponse {
-    success: boolean;
     is_following: boolean;
 }
 

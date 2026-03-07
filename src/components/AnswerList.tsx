@@ -7,9 +7,10 @@ interface AnswerListProps {
     answers: AnswerListItem[];
     acceptedAnswerId: string | null;
     questionAuthorId: string;
+    questionTitle?: string;
 }
 
-export function AnswerList({ answers, acceptedAnswerId, questionAuthorId }: AnswerListProps) {
+export function AnswerList({ answers, acceptedAnswerId, questionAuthorId, questionTitle }: AnswerListProps) {
     if (answers.length === 0) {
         return (
             <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
@@ -46,6 +47,7 @@ export function AnswerList({ answers, acceptedAnswerId, questionAuthorId }: Answ
                         answer={answer}
                         isAccepted={answer.id === acceptedAnswerId}
                         questionAuthorId={questionAuthorId}
+                        questionTitle={questionTitle}
                     />
                 ))}
             </div>

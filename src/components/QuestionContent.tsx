@@ -250,12 +250,16 @@ export function QuestionContent({ question }: QuestionContentProps) {
                                 </h1>
 
                                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                                    <div className="flex items-center gap-2 text-gray-900 font-medium">
+                                    <Link
+                                        href={`/users/${question.author.id}`}
+                                        className="flex items-center gap-2 text-gray-900 font-medium hover:text-blue-600 transition-colors"
+                                        title={`View ${question.author.username}'s profile`}
+                                    >
                                         <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
                                             {question.author.username[0].toUpperCase()}
                                         </div>
                                         {question.author.username}
-                                    </div>
+                                    </Link>
                                     <span>•</span>
                                     <time dateTime={typeof question.created_at === 'string' ? question.created_at : question.created_at.toISOString()}>
                                         Asked {formatDistanceToNow(new Date(question.created_at), { addSuffix: true })}

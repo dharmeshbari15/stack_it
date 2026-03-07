@@ -24,6 +24,24 @@ export function FollowButton({
     const [isFollowing, setIsFollowing] = useState(isFollowingInitial)
     const [isLoading, setIsLoading] = useState(false)
 
+    const getIsFollowingFromPayload = (payload: unknown): boolean | null => {
+        if (!payload || typeof payload !== 'object') {
+            return null
+        }
+
+        const wrapped = payload as ApiResponse<FollowResponse>
+        if (wrapped.success && wrapped.data && typeof wrapped.data.is_following === 'boolean') {
+            return wrapped.data.is_following
+        }
+
+        const legacy = payload as FollowResponse
+        if (typeof legacy.is_following === 'boolean') {
+            return legacy.is_following
+        }
+
+        return null
+    }
+
     const endpoint = useMemo(() => {
         switch (entityType) {
             case 'tag':
@@ -37,15 +55,29 @@ export function FollowButton({
 
     useEffect(() => {
         const checkFollowStatus = async () => {
+            if (status === 'loading') {
+                return
+            }
+
+            if (status !== 'authenticated') {
+                setIsFollowing(false)
+                return
+            }
+
             try {
-                const response = await fetch(endpoint, { method: 'GET' })
+                const response = await fetch(endpoint, {
+                    method: 'GET',
+                    credentials: 'include',
+                    cache: 'no-store'
+                })
                 if (!response.ok) {
                     return
                 }
 
-                const payload = await response.json() as ApiResponse<FollowResponse>
-                if (payload.success && payload.data) {
-                    setIsFollowing(payload.data.is_following)
+                const payload = await response.json()
+                const parsedStatus = getIsFollowingFromPayload(payload)
+                if (typeof parsedStatus === 'boolean') {
+                    setIsFollowing(parsedStatus)
                 }
             } catch (error) {
                 console.error('Error checking follow status:', error)
@@ -66,25 +98,30 @@ export function FollowButton({
             const method = isFollowing ? 'DELETE' : 'POST'
             const response = await fetch(endpoint, {
                 method,
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
             })
 
             if (!response.ok) {
-                throw new Error('Failed to update follow status')
+                const errorPayload = await response.json().catch(() => null) as {
+                    error?: { message?: string }
+                } | null
+                throw new Error(errorPayload?.error?.message ?? 'Failed to update follow status')
             }
 
-            const payload = await response.json() as ApiResponse<FollowResponse>
-            if (!payload.success || !payload.data) {
+            const payload = await response.json()
+            const nextState = getIsFollowingFromPayload(payload)
+            if (typeof nextState !== 'boolean') {
                 throw new Error('Invalid follow response')
             }
 
-            const nextState = payload.data.is_following
             setIsFollowing(nextState)
             queryClient.invalidateQueries({ queryKey: ['follows'] })
             toast.success(nextState ? 'Followed successfully' : 'Unfollowed successfully')
         } catch (error) {
             console.error('Error toggling follow:', error)
-            toast.error('Could not update follow status. Please try again.')
+            const errorMessage = error instanceof Error ? error.message : 'Could not update follow status. Please try again.'
+            toast.error(errorMessage)
         } finally {
             setIsLoading(false)
         }

@@ -4,16 +4,20 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
+import type { ApiResponse } from '@/types/api';
 
 export default function MyProfileRedirectPage() {
     const router = useRouter();
-    const { status } = useSession();
+    const { data: session, status } = useSession();
 
-    const { data, isLoading } = useQuery<{ success: boolean; data: { id: string } } | null>({
+    const { data, isLoading } = useQuery<ApiResponse<{ id: string; username: string }> | null>({
         queryKey: ['my-profile-id'],
         enabled: status === 'authenticated',
         queryFn: async () => {
-            const res = await fetch('/api/v1/users/me');
+            const res = await fetch('/api/v1/users/me', {
+                credentials: 'include',
+                cache: 'no-store',
+            });
             if (!res.ok) {
                 return null;
             }
@@ -27,11 +31,15 @@ export default function MyProfileRedirectPage() {
             return;
         }
 
-        const userId = data?.data?.id;
-        if (status === 'authenticated' && userId) {
-            router.replace(`/users/${userId}`);
+        if (status !== 'authenticated') {
+            return;
         }
-    }, [status, data, router]);
+
+        const resolvedUserId = data?.data?.id ?? session?.user?.id;
+        if (resolvedUserId) {
+            router.replace(`/users/${resolvedUserId}`);
+        }
+    }, [status, data, session, router]);
 
     return (
         <main className="mx-auto max-w-3xl px-4 py-16 text-center text-gray-600">

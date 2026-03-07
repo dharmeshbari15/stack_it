@@ -21,12 +21,12 @@ export const GET = apiHandler<{ id: string }, FollowResponse>(
         }
 
         if (!session?.user) {
-            return apiSuccess({ success: true, is_following: false })
+            return apiSuccess({ is_following: false })
         }
 
         const sessionUserId = await resolveSessionUserId(session)
         if (!sessionUserId || sessionUserId === userId) {
-            return apiSuccess({ success: true, is_following: false })
+            return apiSuccess({ is_following: false })
         }
 
         const follow = await prisma.followUser.findUnique({
@@ -38,7 +38,7 @@ export const GET = apiHandler<{ id: string }, FollowResponse>(
             }
         })
 
-        return apiSuccess({ success: true, is_following: !!follow })
+        return apiSuccess({ is_following: !!follow })
     }
 )
 
@@ -85,7 +85,7 @@ export const POST = apiHandler<{ id: string }, FollowResponse>(
         })
 
         if (existing) {
-            return apiSuccess({ success: true, is_following: true })
+            return apiSuccess({ is_following: true })
         }
 
         // Create follow relationship
@@ -96,7 +96,7 @@ export const POST = apiHandler<{ id: string }, FollowResponse>(
             }
         })
 
-        return apiSuccess({ success: true, is_following: true })
+        return apiSuccess({ is_following: true })
     }
 )
 
@@ -126,6 +126,6 @@ export const DELETE = apiHandler<{ id: string }, FollowResponse>(
             }
         })
 
-        return apiSuccess({ success: true, is_following: false })
+        return apiSuccess({ is_following: false })
     }
 )

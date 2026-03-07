@@ -129,6 +129,7 @@ export default function Navbar() {
     const searchParams = useSearchParams();
     const isLoggedIn = status === 'authenticated';
     const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? '?';
+    const profileHref = session?.user?.id ? `/users/${session.user.id}` : '/users/me';
 
     // Initialize search query from URL
     useEffect(() => {
@@ -220,7 +221,7 @@ export default function Navbar() {
                                         </div>
 
                                         <Link
-                                            href="/users/me"
+                                            href={profileHref}
                                             onClick={() => setIsMenuOpen(false)}
                                             className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                         >

@@ -7,6 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Editor } from './Editor';
 import { SimilarQuestionsPanel } from './SimilarQuestionsPanel';
+import { AITagSuggestions } from './AITagSuggestions';
+import { AIQualityFeedback } from './AIQualityFeedback';
 
 const askQuestionSchema = z.object({
     title: z.string()
@@ -97,6 +99,20 @@ export function AskQuestionForm() {
         const nextValue = `${updated}, `;
         setValue('tags', nextValue, { shouldValidate: true, shouldDirty: true });
         setShowTagSuggestions(false);
+    };
+
+    const applyAITag = (tag: string) => {
+        const existingTags = tagsValue
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean);
+        
+        if (!existingTags.includes(tag)) {
+            const newValue = existingTags.length > 0 
+                ? `${existingTags.join(', ')}, ${tag}, `
+                : `${tag}, `;
+            setValue('tags', newValue, { shouldValidate: true, shouldDirty: true });
+        }
     };
 
     const onSubmit = async (values: AskQuestionFormValues) => {
@@ -203,6 +219,16 @@ export function AskQuestionForm() {
                 {errors.tags && <p className="mt-1 text-xs text-red-500">{errors.tags.message}</p>}
             </div>
 
+            {/* AI Tag Suggestions */}
+            {title.length >= 15 && description.length >= 50 && (
+                <AITagSuggestions
+                    title={title}
+                    description={description}
+                    currentTags={tagsValue}
+                    onSelectTag={applyAITag}
+                />
+            )}
+
             <div>
                 <label htmlFor="description" className="block text-sm font-semibold text-gray-900 mb-1">
                     Everything else
@@ -223,6 +249,14 @@ export function AskQuestionForm() {
 
                 {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>}
             </div>
+
+            {/* AI Quality Feedback */}
+            {title.length >= 10 && description.length >= 30 && (
+                <AIQualityFeedback
+                    title={title}
+                    description={description}
+                />
+            )}
 
             {/* Similar Questions Panel */}
             {title.length >= 10 && description.length >= 30 && (

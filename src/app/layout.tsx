@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 import { Toaster } from '@/components/Toaster';
 import QueryProvider from '@/components/QueryProvider';
 import SessionProvider from '@/components/SessionProvider';
+import { AIChatbot } from '@/components/AIChatbot';
 import { auth } from '@/auth';
 
 const inter = Inter({
@@ -51,6 +52,7 @@ export default async function RootLayout({
             <div className="min-h-screen bg-gray-50">
               {children}
             </div>
+            <AIChatbot />
           </QueryProvider>
         </SessionProvider>
       </body>

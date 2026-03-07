@@ -138,7 +138,16 @@ export function QuestionCard({ question }: QuestionCardProps) {
                             </svg>
                             <span>{question.answers_count} {question.answers_count === 1 ? 'answer' : 'answers'}</span>
                         </div>
-                        <span>Asked by <span className="font-medium text-gray-900">{question.author.username}</span></span>
+                        <span>
+                            Asked by{' '}
+                            <Link
+                                href={`/users/${question.author.id}`}
+                                className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                                title={`View ${question.author.username}'s profile`}
+                            >
+                                {question.author.username}
+                            </Link>
+                        </span>
                     </div>
                     <time dateTime={question.created_at}>
                         {formatDistanceToNow(new Date(question.created_at), { addSuffix: true })}

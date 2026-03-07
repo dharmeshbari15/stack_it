@@ -107,6 +107,7 @@ export default function QuestionDetailPage() {
                         answers={question.answers}
                         acceptedAnswerId={question.accepted_answer_id}
                         questionAuthorId={question.author.id}
+                        questionTitle={question.title}
                     />
                 </div>
 

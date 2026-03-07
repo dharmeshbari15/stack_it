@@ -3,20 +3,23 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Link from 'next/link';
 import { toast } from '@/lib/events';
 import { Trash2, Edit2, X, Check } from 'lucide-react';
 import { AnswerListItem } from '@/types/api';
 import { Editor } from './Editor';
 import { CommentThread } from './CommentThread';
 import { RichContentRenderer } from './RichContentRenderer';
+import { AIAnswerSummary } from './AIAnswerSummary';
 
 interface AnswerItemProps {
     answer: AnswerListItem;
     isAccepted?: boolean;
     questionAuthorId: string;
+    questionTitle?: string;
 }
 
-export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemProps) {
+export function AnswerItem({ answer, isAccepted, questionAuthorId, questionTitle }: AnswerItemProps) {
     const { data: session } = useSession();
     const { id: questionId } = useParams();
     const router = useRouter();
@@ -285,7 +288,14 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
                             </div>
                         </div>
                     ) : (
-                        <RichContentRenderer html={answer.body} />
+                        <>
+                            {/* AI Summary */}
+                            <AIAnswerSummary
+                                answerContent={answer.body}
+                                questionTitle={questionTitle}
+                            />
+                            <RichContentRenderer html={answer.body} />
+                        </>
                     )}
 
                     <div className="flex flex-wrap items-center justify-end gap-6 pt-4 border-t border-gray-100/50">
@@ -293,7 +303,11 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
                             answered {formatDistanceToNow(new Date(answer.created_at), { addSuffix: true })}
                         </div>
 
-                        <div className="flex items-center gap-3 bg-white border border-gray-100 px-4 py-2 rounded-2xl shadow-sm">
+                        <Link
+                            href={`/users/${answer.author.id}`}
+                            className="flex items-center gap-3 bg-white border border-gray-100 px-4 py-2 rounded-2xl shadow-sm hover:border-blue-200 hover:bg-blue-50 transition-colors"
+                            title={`View ${answer.author.username}'s profile`}
+                        >
                             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-inner">
                                 {answer.author.username[0].toUpperCase()}
                             </div>
@@ -301,7 +315,7 @@ export function AnswerItem({ answer, isAccepted, questionAuthorId }: AnswerItemP
                                 <span className="text-xs text-gray-400 font-medium">Contributor</span>
                                 <span className="text-sm font-bold text-gray-900">@{answer.author.username}</span>
                             </div>
-                        </div>
+                        </Link>
 
                         {isAnswerAuthor && !isEditing && (
                             <div className="flex items-center gap-2">
