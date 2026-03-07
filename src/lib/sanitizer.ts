@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtmlLib from 'sanitize-html';
 
 /**
  * Universal server-side HTML sanitizer.
@@ -7,13 +7,19 @@ import DOMPurify from 'isomorphic-dompurify';
 export function sanitizeHtml(html: string): string {
     if (!html) return '';
 
-    return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: [
+    return sanitizeHtmlLib(html, {
+        allowedTags: [
             'p', 'b', 'i', 'em', 'strong', 'code', 'pre',
             'ul', 'ol', 'li', 'br', 'hr', 'a',
             'h1', 'h2', 'h3', 'blockquote'
         ],
-        ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+        allowedAttributes: {
+            a: ['href', 'target', 'rel'],
+            code: ['class'],
+            pre: ['class']
+        },
+        allowedSchemes: ['http', 'https', 'mailto'],
+        disallowedTagsMode: 'discard',
     });
 }
 

@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const CHAT_MODEL = 'gemini-1.5-flash'; // Fast, free, and powerful!
+const CHAT_MODEL = 'gemini-pro'; // Stable, free, and widely available!
 const MAX_TOKENS = 1000;
 
 // Initialize Gemini client
@@ -74,49 +74,35 @@ export async function sendChatMessage(
     }
 
     try {
-        // Initialize the model
-        const model = genAI.getGenerativeModel({ model: CHAT_MODEL });
+        // Initialize the model with system instruction
+        const model = genAI.getGenerativeModel({ 
+            model: CHAT_MODEL,
+            systemInstruction: SYSTEM_PROMPT,
+        });
 
-        // Build conversation history in Gemini format
-        // Gemini requires: 1) First message must be 'user', 2) Roles must alternate
-        const rawHistory = conversationHistory.slice(-8).map(msg => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
-        }));
-
-        // Filter to ensure it starts with 'user' and roles alternate
-        const history: Array<{ role: string; parts: Array<{ text: string }> }> = [];
-        for (let i = 0; i < rawHistory.length; i++) {
-            const msg = rawHistory[i];
-            
-            // First message must be 'user'
-            if (history.length === 0 && msg.role === 'model') {
-                continue; // Skip assistant messages at the start
+        // Build full conversation context as a single prompt
+        let fullPrompt = '';
+        
+        // Add conversation history
+        for (const msg of conversationHistory.slice(-8)) {
+            if (msg.role === 'user') {
+                fullPrompt += `User: ${msg.content}\n\n`;
+            } else if (msg.role === 'assistant') {
+                fullPrompt += `Assistant: ${msg.content}\n\n`;
             }
-            
-            // Ensure roles alternate (no consecutive same roles)
-            if (history.length > 0 && history[history.length - 1].role === msg.role) {
-                continue; // Skip if same role as previous
-            }
-            
-            history.push(msg);
         }
+        
+        // Add current user message
+        fullPrompt += `User: ${userMessage}\n\nAssistant:`;
 
-        // Start chat with history
-        const chat = model.startChat({
-            history: history,
+        // Generate response
+        const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
             generationConfig: {
                 maxOutputTokens: MAX_TOKENS,
                 temperature: 0.7,
             },
         });
-
-        // Send message with system prompt context
-        const prompt = conversationHistory.length === 0 
-            ? `${SYSTEM_PROMPT}\n\nUser: ${userMessage}`
-            : userMessage;
-
-        const result = await chat.sendMessage(prompt);
         const response = await result.response;
         const assistantMessage = response.text() || 'Sorry, I couldn\'t generate a response.';
 
