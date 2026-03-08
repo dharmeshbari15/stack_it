@@ -31,7 +31,11 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.local
+.env.*.local
+# But DO commit .env.example for reference
+!.env.example
 
 # typescript
 *.tsbuildinfo
