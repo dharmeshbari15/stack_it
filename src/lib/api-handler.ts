@@ -115,6 +115,27 @@ export function apiHandler<TParams = any, TResponse = any>(
                 ) as NextResponse<ApiResponse<never>>;
             }
 
+            // DB connectivity issues should not leak internal host details to clients.
+            const message = err instanceof Error ? err.message : String(err);
+            if (
+                err?.code === 'P1001' ||
+                /Can't reach database server|connect ECONNREFUSED|ECONNREFUSED|DATABASE_URL|connection refused/i.test(
+                    message
+                )
+            ) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: {
+                            message:
+                                'Service temporarily unavailable. Please try again in a few moments.',
+                            code: 'DB_UNAVAILABLE',
+                        },
+                    },
+                    { status: 503 },
+                ) as NextResponse<ApiResponse<never>>;
+            }
+
             // Unexpected error — log it and return a generic 500
             console.error('[API Error]', err);
             return NextResponse.json(

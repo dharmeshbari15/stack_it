@@ -27,7 +27,6 @@ Users unlock different reputation levels as they accumulate reputation:
 | 🟩 Beginner | 15+ | Green | Vote on content |
 | 🟦 Intermediate | 50+ | Blue | Post comments |
 | 🟨 Advanced | 100+ | Orange | Edit own posts |
-| 🟥 Veteran | 2,000+ | Red | Edit any posts |
 | ⭐ Expert | 5,000+ | Gold | Delete any posts |
 | 👑 Elite | 10,000+ | Purple | Moderator actions |
 
@@ -143,7 +142,6 @@ Reputation thresholds:
 - Vote (upvote/downvote): 15 points
 - Comment: 50 points
 - Edit own: 100 points
-- Edit any: 2,000 points
 - Delete any: 5,000 points
 - Moderator: 10,000 points
 

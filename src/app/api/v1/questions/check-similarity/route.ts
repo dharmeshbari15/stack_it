@@ -30,11 +30,11 @@ export const POST = apiHandler(async (req) => {
         // 1. Input Validation
         const { title, description, excludeQuestionId } = await parseBody(req, checkSimilaritySchema);
 
-        // 2. Check OpenAI API key is configured
-        if (!process.env.OPENAI_API_KEY) {
+        // 2. Check Gemini API key is configured
+        if (!process.env.GEMINI_API_KEY) {
             return apiSuccess({
                 similar_questions: [],
-                note: 'Duplicate detection is not configured. Set OPENAI_API_KEY environment variable.',
+                note: 'Duplicate detection is not configured. Set GEMINI_API_KEY environment variable.',
             });
         }
 
@@ -59,9 +59,15 @@ export const POST = apiHandler(async (req) => {
         });
     } catch (error) {
         console.error('Error checking similarity:', error);
-        
-        if (error instanceof Error && error.message.includes('OpenAI')) {
-            throw internalError('Failed to check for similar questions. Please try again later.');
+
+        if (
+            error instanceof Error &&
+            /gemini|embedding|quota|resource_exhausted|too many requests|429/i.test(error.message)
+        ) {
+            return apiSuccess({
+                similar_questions: [],
+                note: 'Duplicate detection is temporarily unavailable. Please try again in a few moments.',
+            });
         }
 
         throw error;

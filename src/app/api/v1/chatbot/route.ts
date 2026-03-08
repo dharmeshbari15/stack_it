@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
                     success: false,
                     error: {
                         code: 'CHATBOT_NOT_CONFIGURED',
-                        message: 'Chatbot is not available. Please configure OPENAI_API_KEY.',
+                        message: 'Chatbot is not available. Please configure GEMINI_API_KEY environment variable.',
                     },
                 },
                 { status: 503 }

@@ -1,10 +1,10 @@
 # AI Question Assistant - Quick Start Guide 🚀
 
-Get your AI-powered Q&A features up and running in 5 minutes!
+Get your AI-powered Q&A features up and running in 5 minutes using **Google Gemini (100% FREE!)**
 
 ## Prerequisites
 
-- OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+- Google Gemini API key ([Get FREE here](https://aistudio.google.com/app/apikey))
 - Node.js and npm installed
 - Next.js app already running
 
@@ -12,21 +12,21 @@ Get your AI-powered Q&A features up and running in 5 minutes!
 
 ### 1. Set Environment Variable
 
-Add your OpenAI API key to your environment:
+Add your Gemini API key to your environment:
 
 **Windows PowerShell:**
 ```powershell
-$env:OPENAI_API_KEY='sk-your-api-key-here'
+$env:GEMINI_API_KEY='AIza...your-key-here'
 ```
 
 **Or add to `.env.local`:**
 ```bash
-OPENAI_API_KEY=sk-your-api-key-here
+GEMINI_API_KEY=AIza...your-key-here
 ```
 
 ### 2. Install Dependencies (Already Done!)
 
-The `openai` package is already installed in your project.
+The `@google/generative-ai` package is already installed in your project.
 
 ### 3. Start the Development Server
 
@@ -71,33 +71,42 @@ Visit `http://localhost:3000/ask` and start typing a question!
 All AI features use optimized defaults, but you can customize in [src/lib/ai-assistant.ts](src/lib/ai-assistant.ts):
 
 ```typescript
-const CHAT_MODEL = 'gpt-4o-mini';  // Change model
-const MAX_TOKENS = 500;             // Adjust response length
+const CHAT_MODEL = 'gemini-1.5-flash';  // Fast model (use gemini-1.5-pro for better quality)
+const MAX_TOKENS = 500;                  // Adjust response length
 ```
 
 ## Cost Estimation
 
-With default settings:
-- **Per question asked:** ~$0.0013 (all AI features)
-- **Per answer summarized:** ~$0.0015
-- **10,000 questions/month:** ~$20-25
+**100% FREE with Google Gemini!** 🎉
+
+Free tier includes:
+- 15 requests per minute
+- 1 million tokens per month
+- 1,500 requests per day
+
+For most applications, the free tier is more than enough!
 
 ## Troubleshooting
 
 ### AI features not working?
-1. Check OpenAI API key is set correctly
-2. Verify API key has credits: https://platform.openai.com/usage
+1. Check Gemini API key is set correctly
+2. Verify API key from [Google AI Studio](https://aistudio.google.com/)
 3. Check browser console (F12) for error messages
 
 ### Slow responses?
 - Expected: 1-2 seconds for AI features
-- If slower: Check OpenAI status page
-- Consider upgrading to higher OpenAI tier
+- Check [Google Cloud Status](https://status.cloud.google.com/)
+- Consider using `gemini-2.0-flash` for faster responses
 
 ### Wrong tag suggestions?
 - AI only suggests tags that exist in database
 - Run tag seeder to populate more tags
 - Tags come from `/api/v1/tags` endpoint
+
+### Rate limit errors?
+- Free tier: 15 requests/minute
+- Wait a moment between requests
+- Or upgrade to paid tier for higher limits
 
 ## Where to See AI Features
 
@@ -153,17 +162,16 @@ All AI endpoints are under `/api/v1/ai/`:
 2. 📚 **Read full docs** in [AI_ASSISTANT_COMPLETE.md](AI_ASSISTANT_COMPLETE.md)
 3. 🎨 **Customize UI** colors/styles to match your brand
 4. 🔧 **Fine-tune prompts** in `ai-assistant.ts` for your domain
-5. 📊 **Monitor costs** in OpenAI dashboard
+5. 📊 **Monitor usage** (100% FREE with generous limits!)
 6. 🚀 **Deploy to production** with environment variable set
 
 ## Support
 
-- **Full Documentation:** [AI_ASSISTANT_COMPLETE.md](AI_ASSISTANT_COMPLETE.md)
-- **OpenAI Docs:** https://platform.openai.com/docs
+- **Full Documentation:** [AI_ASSISTANT_COMPLETE.md](AI_ASSISTANT_COMPLETE.md) (note: update this for Gemini)
+- **Gemini API Docs:** https://ai.google.dev/docs
+- **Chatbot Setup:** [CHATBOT_SETUP.md](CHATBOT_SETUP.md)
 - **Issues?** Check the Troubleshooting section above
 
 ---
 
-**Ready to go!** All AI features are implemented and waiting for your OpenAI API key. 🎉
-
-**Pro tip:** Start with a low-cost testing API key to experiment, then upgrade for production.
+**Ready to go!** All AI features are implemented and 100% FREE with Google Gemini! 🎉

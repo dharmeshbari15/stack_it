@@ -19,7 +19,6 @@ export const REPUTATION_THRESHOLDS = {
     VOTE: 15,
     COMMENT: 50,
     EDIT_OWN: 100,
-    EDIT_ANY: 2000,
     DELETE_ANY: 5000,
     MODERATOR: 10000,
 } as const;
@@ -128,41 +127,33 @@ export function getReputationLevel(reputation: number): {
             nextThreshold: 10000,
         };
     }
-    if (reputation >= 2000) {
+    if (reputation >= 100) {
         return {
-            level: 'Veteran',
+            level: 'Advanced',
             color: 'orange',
             nextLevel: 'Expert',
             nextThreshold: 5000,
         };
     }
-    if (reputation >= 500) {
-        return {
-            level: 'Advanced',
-            color: 'blue',
-            nextLevel: 'Veteran',
-            nextThreshold: 2000,
-        };
-    }
-    if (reputation >= 100) {
+    if (reputation >= 50) {
         return {
             level: 'Intermediate',
-            color: 'green',
+            color: 'blue',
             nextLevel: 'Advanced',
-            nextThreshold: 500,
+            nextThreshold: 100,
         };
     }
     if (reputation >= 15) {
         return {
             level: 'Beginner',
-            color: 'gray',
+            color: 'green',
             nextLevel: 'Intermediate',
             nextThreshold: 50,
         };
     }
     return {
         level: 'Newbie',
-        color: 'lightgray',
+        color: 'gray',
         nextLevel: 'Beginner',
         nextThreshold: 15,
     };
@@ -175,7 +166,6 @@ export function getUserPermissions(reputation: number): {
     canVote: boolean;
     canComment: boolean;
     canEditOwn: boolean;
-    canEditAny: boolean;
     canDeleteAny: boolean;
     isModerator: boolean;
 } {
@@ -183,7 +173,6 @@ export function getUserPermissions(reputation: number): {
         canVote: hasReputationPermission(reputation, 'VOTE'),
         canComment: hasReputationPermission(reputation, 'COMMENT'),
         canEditOwn: hasReputationPermission(reputation, 'EDIT_OWN'),
-        canEditAny: hasReputationPermission(reputation, 'EDIT_ANY'),
         canDeleteAny: hasReputationPermission(reputation, 'DELETE_ANY'),
         isModerator: hasReputationPermission(reputation, 'MODERATOR'),
     };

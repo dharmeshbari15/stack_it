@@ -415,7 +415,6 @@ export default function LeaderboardPage() {
             <li>15 pts: Vote on content</li>
             <li>50 pts: Comment</li>
             <li>100 pts: Edit your posts</li>
-            <li>2000 pts: Edit any post</li>
             <li>5000 pts: Delete posts</li>
           </ul>
         </div>

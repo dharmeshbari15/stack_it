@@ -13,6 +13,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 const AUTH_ERRORS: Record<string, string> = {
     CredentialsSignin: 'Invalid email or password. Please try again.',
+    Configuration:
+        'Login is temporarily unavailable due to server auth configuration. Please try again shortly.',
+    AccessDenied: 'Login request was denied. Please retry.',
+    CallbackRouteError:
+        'Login is temporarily unavailable because the database is not reachable. Please try again shortly.',
     Default: 'Something went wrong. Please try again.',
 };
 

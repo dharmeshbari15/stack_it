@@ -139,7 +139,7 @@ export function AIChatbot() {
                         </div>
                         <div>
                             <h3 className="font-bold text-sm">AI Programming Assistant</h3>
-                            <p className="text-xs text-purple-100">Powered by GPT-4o-mini</p>
+                            <p className="text-xs text-purple-100">Powered by Google Gemini</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">

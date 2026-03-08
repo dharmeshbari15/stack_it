@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const CHAT_MODEL = 'gemini-pro'; // Stable, free, and widely available!
+const CHAT_MODEL = 'gemini-2.0-flash'; // Stable and broadly available.
 const MAX_TOKENS = 1000;
 
 // Initialize Gemini client

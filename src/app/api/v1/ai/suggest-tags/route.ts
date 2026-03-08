@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
                     success: false,
                     error: {
                         code: 'AI_NOT_CONFIGURED',
-                        message: 'AI features are not configured. Please set OPENAI_API_KEY.',
+                        message: 'AI features are not configured. Please set GEMINI_API_KEY.',
                     },
                     data: { suggestions: [] },
                 },
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
             success: true,
             data: {
                 suggestions,
-                model: 'gpt-4o-mini',
+                model: 'gemini-2.0-flash',
             },
         });
     } catch (error) {

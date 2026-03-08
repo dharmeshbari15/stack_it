@@ -28,7 +28,6 @@ Users progress through 6+ reputation tiers with increasing privileges:
 | **Beginner** | 15+ | Green | Vote on questions/answers |
 | **Intermediate** | 50+ | Blue | Leave comments |
 | **Advanced** | 100+ | Orange | Edit your own posts |
-| **Veteran** | 2,000+ | Red | Edit any user's post |
 | **Expert** | 5,000+ | Gold | Delete posts |
 | **Elite** | 10,000+ | Purple | Moderation privileges |
 

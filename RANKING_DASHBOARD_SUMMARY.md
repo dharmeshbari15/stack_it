@@ -59,7 +59,6 @@ A complete **ranking system** and **gamified dashboard** where users can:
 | Beginner | 15+ | Vote |
 | Intermediate | 50+ | Comment |
 | Advanced | 100+ | Edit own posts |
-| Veteran | 2,000+ | Edit any post |
 | Expert | 5,000+ | Delete posts |
 | Elite | 10,000+ | Moderation |
 

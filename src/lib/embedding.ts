@@ -1,17 +1,17 @@
 // lib/embedding.ts
-// Service for generating and managing question embeddings using OpenAI API
+// Service for generating and managing question embeddings using Google Gemini (100% FREE!)
 
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from './prisma';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const EMBEDDING_MODEL = 'text-embedding-3-small';
-const EMBEDDING_DIMENSIONS = 1536; // dimensions for text-embedding-3-small
+const EMBEDDING_MODEL = 'gemini-embedding-001';
+const EMBEDDING_DIMENSIONS = 3072; // dimensions for gemini-embedding-001
 
-// Initialize OpenAI client (will use OPENAI_API_KEY from env)
-const openai = process.env.OPENAI_API_KEY 
-    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// Initialize Gemini client (will use GEMINI_API_KEY from env)
+const genAI = process.env.GEMINI_API_KEY 
+    ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
     : null;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,11 +34,11 @@ export interface SimilarQuestion {
 // ─── Core Functions ───────────────────────────────────────────────────────────
 
 /**
- * Generate embedding vector from text using OpenAI API
+ * Generate embedding vector from text using Google Gemini API
  */
 export async function generateEmbedding(text: string): Promise<EmbeddingResult> {
-    if (!openai) {
-        throw new Error('OpenAI API key not configured. Set OPENAI_API_KEY environment variable.');
+    if (!genAI) {
+        throw new Error('Gemini API key not configured. Set GEMINI_API_KEY environment variable.');
     }
 
     if (!text || text.trim().length === 0) {
@@ -46,18 +46,18 @@ export async function generateEmbedding(text: string): Promise<EmbeddingResult> 
     }
 
     try {
-        const response = await openai.embeddings.create({
-            model: EMBEDDING_MODEL,
-            input: text.trim(),
-        });
+        const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+        
+        const result = await model.embedContent(text.trim());
+        const embedding = result.embedding;
 
         return {
-            embedding: response.data[0].embedding,
+            embedding: embedding.values,
             model: EMBEDDING_MODEL,
         };
     } catch (error) {
         console.error('Error generating embedding:', error);
-        throw new Error('Failed to generate embedding from OpenAI API');
+        throw new Error('Failed to generate embedding from Gemini API');
     }
 }
 
@@ -157,6 +157,7 @@ export async function findSimilarQuestions(
     // TODO: For large datasets, use pgvector extension for efficient similarity search
     const embeddings = await prisma.questionEmbedding.findMany({
         where: {
+            model_version: EMBEDDING_MODEL,
             question: {
                 deleted_at: null,
                 ...(excludeQuestionId ? { id: { not: excludeQuestionId } } : {}),
@@ -183,6 +184,12 @@ export async function findSimilarQuestions(
 
     for (const embeddingRecord of embeddings) {
         const storedEmbedding = JSON.parse(embeddingRecord.embedding) as number[];
+
+        // Guard against legacy vectors from older models (e.g., 768/1536 dims).
+        if (storedEmbedding.length !== EMBEDDING_DIMENSIONS) {
+            continue;
+        }
+
         const similarity = cosineSimilarity(queryEmbedding, storedEmbedding);
 
         if (similarity >= threshold) {

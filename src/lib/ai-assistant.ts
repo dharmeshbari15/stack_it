@@ -1,17 +1,17 @@
 // lib/ai-assistant.ts
-// AI-powered question and answer assistance using OpenAI GPT models
+// AI-powered question and answer assistance using Google Gemini (100% FREE!)
 
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from './prisma';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const CHAT_MODEL = 'gpt-4o-mini'; // Fast and cost-effective for most tasks
+const CHAT_MODEL = 'gemini-2.0-flash'; // Stable and available for current Gemini API keys.
 const MAX_TOKENS = 500;
 
-// Initialize OpenAI client (will use OPENAI_API_KEY from env)
-const openai = process.env.OPENAI_API_KEY 
-    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// Initialize Gemini client (will use GEMINI_API_KEY from env)
+const genAI = process.env.GEMINI_API_KEY 
+    ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
     : null;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -35,13 +35,107 @@ export interface AnswerSummary {
     readingTime: number; // estimated minutes for full answer
 }
 
+function isGeminiRecoverableError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /quota|resource_exhausted|too many requests|429|not found|404|retry/i.test(message);
+}
+
+function fallbackSuggestTags(
+    title: string,
+    description: string,
+    availableTags: string[]
+): TagSuggestion[] {
+    const text = `${title} ${description}`.toLowerCase();
+    const matches = availableTags
+        .map((tag) => {
+            const normalized = tag.toLowerCase();
+            let score = 0;
+
+            if (text.includes(normalized)) score += 0.9;
+            if (title.toLowerCase().includes(normalized)) score += 0.1;
+
+            return { name: tag, confidence: Math.min(0.99, score) };
+        })
+        .filter((t) => t.confidence > 0)
+        .sort((a, b) => b.confidence - a.confidence)
+        .slice(0, 5)
+        .map((t) => ({
+            name: t.name,
+            confidence: Math.max(0.55, t.confidence),
+            reason: 'Keyword match from your question content',
+        }));
+
+    return matches;
+}
+
+function fallbackQuality(title: string, description: string): QualityFeedback {
+    let score = 40;
+    const strengths: string[] = [];
+    const suggestions: string[] = [];
+
+    if (title.length >= 20) {
+        score += 12;
+        strengths.push('Title is descriptive enough');
+    } else {
+        suggestions.push('Make the title more specific (include framework/error/context)');
+    }
+
+    if (description.length >= 120) {
+        score += 15;
+        strengths.push('Description has useful detail');
+    } else {
+        suggestions.push('Add more detail: expected behavior, actual behavior, and what you tried');
+    }
+
+    if (/```|error|exception|stack|trace/i.test(description)) {
+        score += 12;
+        strengths.push('Includes technical signals (errors/code/context)');
+    } else {
+        suggestions.push('Include the exact error message or minimal code snippet');
+    }
+
+    if (/expected|actual|tried|attempted|reproduce/i.test(description)) {
+        score += 11;
+        strengths.push('Shows troubleshooting context');
+    } else {
+        suggestions.push('Describe expected vs actual behavior and your troubleshooting steps');
+    }
+
+    score = Math.max(0, Math.min(100, score));
+    const level: QualityFeedback['level'] =
+        score > 80 ? 'excellent' : score > 60 ? 'good' : score > 40 ? 'needs-improvement' : 'poor';
+
+    return {
+        score,
+        level,
+        suggestions: suggestions.slice(0, 4),
+        strengths: strengths.slice(0, 3),
+    };
+}
+
+function fallbackSummary(answerContent: string, readingTime: number): AnswerSummary {
+    const sentences = answerContent
+        .replace(/\s+/g, ' ')
+        .split(/(?<=[.!?])\s+/)
+        .filter(Boolean);
+
+    const summary = sentences.slice(0, 3).join(' ') || answerContent.substring(0, 240);
+    const keyPoints = sentences.slice(0, 4).map((s) => s.trim()).filter(Boolean);
+
+    return {
+        summary,
+        keyPoints,
+        readingTime,
+    };
+}
+
 // ─── Helper Functions ─────────────────────────────────────────────────────────
 
 /**
  * Check if AI features are available
  */
 export function isAIAvailable(): boolean {
-    return openai !== null;
+    return genAI !== null;
 }
 
 /**
@@ -70,8 +164,8 @@ export async function suggestTags(
     title: string,
     description: string
 ): Promise<TagSuggestion[]> {
-    if (!openai) {
-        throw new Error('OpenAI API key not configured. Set OPENAI_API_KEY environment variable.');
+    if (!genAI) {
+        throw new Error('Gemini API key not configured. Set GEMINI_API_KEY environment variable.');
     }
 
     // Get available tags from database
@@ -99,32 +193,35 @@ Respond in JSON format:
 }`;
 
     try {
-        const response = await openai.chat.completions.create({
+        const model = genAI.getGenerativeModel({ 
             model: CHAT_MODEL,
-            messages: [
-                {
-                    role: 'system',
-                    content: 'You are a helpful assistant that suggests relevant tags for technical questions. Always respond with valid JSON.',
-                },
-                {
-                    role: 'user',
-                    content: prompt,
-                },
-            ],
-            temperature: 0.3, // Lower temperature for more consistent results
-            max_tokens: MAX_TOKENS,
-            response_format: { type: 'json_object' },
+            generationConfig: {
+                maxOutputTokens: MAX_TOKENS,
+                temperature: 0.3, // Lower temperature for more consistent results
+            },
         });
 
-        const content = response.choices[0].message.content;
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const content = response.text();
+        
         if (!content) {
             throw new Error('No response from AI');
         }
 
-        const parsed = JSON.parse(content);
+        // Extract JSON from response (Gemini might wrap it in code blocks)
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error('No JSON found in response');
+        }
+
+        const parsed = JSON.parse(jsonMatch[0]);
         return (parsed.tags || []).slice(0, 5); // Max 5 suggestions
     } catch (error) {
         console.error('Error suggesting tags:', error);
+        if (isGeminiRecoverableError(error)) {
+            return fallbackSuggestTags(title, description, availableTags);
+        }
         throw new Error('Failed to generate tag suggestions');
     }
 }
@@ -139,8 +236,8 @@ export async function analyzeQuestionQuality(
     title: string,
     description: string
 ): Promise<QualityFeedback> {
-    if (!openai) {
-        throw new Error('OpenAI API key not configured. Set OPENAI_API_KEY environment variable.');
+    if (!genAI) {
+        throw new Error('Gemini API key not configured. Set GEMINI_API_KEY environment variable.');
     }
 
     const prompt = `You are a quality reviewer for a Stack Overflow-like Q&A platform. Analyze this question and provide constructive feedback.
@@ -171,29 +268,29 @@ Suggestions: 2-4 specific, actionable improvements
 Strengths: 1-3 things the question does well`;
 
     try {
-        const response = await openai.chat.completions.create({
+        const model = genAI.getGenerativeModel({ 
             model: CHAT_MODEL,
-            messages: [
-                {
-                    role: 'system',
-                    content: 'You are a constructive question quality reviewer. Be helpful and specific. Always respond with valid JSON.',
-                },
-                {
-                    role: 'user',
-                    content: prompt,
-                },
-            ],
-            temperature: 0.4,
-            max_tokens: MAX_TOKENS,
-            response_format: { type: 'json_object' },
+            generationConfig: {
+                maxOutputTokens: MAX_TOKENS,
+                temperature: 0.4,
+            },
         });
 
-        const content = response.choices[0].message.content;
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const content = response.text();
+        
         if (!content) {
             throw new Error('No response from AI');
         }
 
-        const parsed = JSON.parse(content);
+        // Extract JSON from response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error('No JSON found in response');
+        }
+
+        const parsed = JSON.parse(jsonMatch[0]);
         return {
             score: parsed.score || 50,
             level: parsed.level || 'needs-improvement',
@@ -202,6 +299,9 @@ Strengths: 1-3 things the question does well`;
         };
     } catch (error) {
         console.error('Error analyzing question quality:', error);
+        if (isGeminiRecoverableError(error)) {
+            return fallbackQuality(title, description);
+        }
         throw new Error('Failed to analyze question quality');
     }
 }
@@ -216,8 +316,8 @@ export async function summarizeAnswer(
     answerContent: string,
     questionTitle?: string
 ): Promise<AnswerSummary> {
-    if (!openai) {
-        throw new Error('OpenAI API key not configured. Set OPENAI_API_KEY environment variable.');
+    if (!genAI) {
+        throw new Error('Gemini API key not configured. Set GEMINI_API_KEY environment variable.');
     }
 
     // Estimate reading time (average 200 words per minute)
@@ -253,29 +353,29 @@ Guidelines:
 - Preserve technical accuracy`;
 
     try {
-        const response = await openai.chat.completions.create({
+        const model = genAI.getGenerativeModel({ 
             model: CHAT_MODEL,
-            messages: [
-                {
-                    role: 'system',
-                    content: 'You are a technical summarizer. Create accurate, concise summaries. Always respond with valid JSON.',
-                },
-                {
-                    role: 'user',
-                    content: prompt,
-                },
-            ],
-            temperature: 0.3,
-            max_tokens: MAX_TOKENS,
-            response_format: { type: 'json_object' },
+            generationConfig: {
+                maxOutputTokens: MAX_TOKENS,
+                temperature: 0.3,
+            },
         });
 
-        const content = response.choices[0].message.content;
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const content = response.text();
+        
         if (!content) {
             throw new Error('No response from AI');
         }
 
-        const parsed = JSON.parse(content);
+        // Extract JSON from response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error('No JSON found in response');
+        }
+
+        const parsed = JSON.parse(jsonMatch[0]);
         return {
             summary: parsed.summary || 'Unable to generate summary',
             keyPoints: parsed.keyPoints || [],
@@ -283,6 +383,9 @@ Guidelines:
         };
     } catch (error) {
         console.error('Error summarizing answer:', error);
+        if (isGeminiRecoverableError(error)) {
+            return fallbackSummary(answerContent, readingTime);
+        }
         throw new Error('Failed to generate answer summary');
     }
 }
@@ -300,8 +403,8 @@ export async function analyzeQuestionComplete(
     tags: TagSuggestion[];
     quality: QualityFeedback;
 }> {
-    if (!openai) {
-        throw new Error('OpenAI API key not configured');
+    if (!genAI) {
+        throw new Error('Gemini API key not configured');
     }
 
     // Run tag suggestions and quality analysis in parallel

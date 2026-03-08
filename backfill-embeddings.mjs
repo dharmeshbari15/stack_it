@@ -1,18 +1,18 @@
 // backfill-embeddings.mjs
-// Script to generate embeddings for existing questions
+// Script to generate embeddings for existing questions using Google Gemini (100% FREE!)
 // Usage: node backfill-embeddings.mjs
 
 import { PrismaClient } from './src/generated/prisma/client.ts';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
 const prisma = new PrismaClient();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const EMBEDDING_MODEL = 'text-embedding-3-small';
+const EMBEDDING_MODEL = 'gemini-embedding-001';
 const BATCH_SIZE = 10;
 
 function createQuestionText(title, description) {
@@ -20,11 +20,9 @@ function createQuestionText(title, description) {
 }
 
 async function generateEmbedding(text) {
-    const response = await openai.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: text.trim(),
-    });
-    return response.data[0].embedding;
+    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+    const result = await model.embedContent(text.trim());
+    return result.embedding.values;
 }
 
 async function backfillBatch() {
@@ -86,8 +84,8 @@ async function backfillBatch() {
 async function main() {
     console.log('🚀 Starting embedding backfill...\n');
 
-    if (!process.env.OPENAI_API_KEY) {
-        console.error('❌ Error: OPENAI_API_KEY environment variable not set');
+    if (!process.env.GEMINI_API_KEY) {
+        console.error('❌ Error: GEMINI_API_KEY environment variable not set');
         process.exit(1);
     }
 

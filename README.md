@@ -66,7 +66,12 @@ Create a `.env` file in the root directory and add the following:
 DATABASE_URL="postgresql://user:password@host:port/dbname?pgbouncer=true"
 NEXTAUTH_SECRET="your_secure_random_string"
 NEXTAUTH_URL="http://localhost:3000"
+
+# Optional: AI Features (100% FREE with Google Gemini!)
+GEMINI_API_KEY="AIza...your-key-here"
 ```
+
+> **Note:** AI features (chatbot, tag suggestions, quality analysis, duplicate detection) are optional and use Google Gemini's free API. Get your key at [aistudio.google.com](https://aistudio.google.com/app/apikey)
 
 4. Run database migrations
 ```bash
@@ -113,6 +118,17 @@ TODO: Add details
 2. Ensure the `DATABASE_URL` is configured correctly for your hosting environment.
 3. Deploy the Next.js application to your preferred hosting platform.
 4. Add the `NEXTAUTH_SECRET` and `NEXTAUTH_URL` environment variables in your hosting platform's dashboard.
+
+### Vercel Auth.js Notes
+
+For Auth.js v5 deployments on Vercel, set these production environment variables:
+
+- `DATABASE_URL` to a hosted Postgres connection string (for example Supabase/Neon). Do not use `localhost` or `127.0.0.1` in production.
+- `AUTH_SECRET` (or `NEXTAUTH_SECRET`) to a strong random value
+- `AUTH_URL` (or `NEXTAUTH_URL`) to your deployed site URL (for example `https://your-app.vercel.app`)
+- `AUTH_TRUST_HOST=true` when behind reverse proxies/load balancers
+
+If login fails with a configuration/host error in production, first verify these values in the Vercel dashboard.
 
 ## 🤝 Contributing
 

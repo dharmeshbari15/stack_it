@@ -16,6 +16,9 @@ import { prisma } from '@/lib/prisma';
 export const authConfig: NextAuthConfig = {
     // Support both Auth.js v5 env naming and legacy NextAuth naming.
     secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+    // Required behind proxies (for example Vercel) so Auth.js accepts the host
+    // from forwarded headers and does not fail with host trust errors.
+    trustHost: true,
 
     // Custom pages — keeps the UI consistent with the StackIt design
     pages: {
