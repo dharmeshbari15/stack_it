@@ -1,0 +1,182 @@
+# Professional Commit Messages for StackIt Project
+# Copy these messages when rebasing (git rebase -i --root)
+
+# ===== COMMIT 1 (f25d84d) =====
+docs: add initial project documentation
+
+Add Product Requirements Document (PRD), Design Document, Tech Stack specifications, and TODO lists for project planning and development roadmap.
+
+# ===== COMMIT 2 (0c068b3) =====
+chore: initialize Next.js project with Prisma ORM
+
+Set up Next.js 15 with TypeScript, Tailwind CSS v4, ESLint, Prettier, and Prisma ORM configuration for development environment.
+
+# ===== COMMIT 3 (38f2006) =====
+feat(db): define initial database schema
+
+Introduce Prisma schema with core entities: User, Question, Answer, Tag, Vote, Comment, and Notification models with relationships.
+
+# ===== COMMIT 4 (20b9ebf) =====
+feat(lib): add Prisma client singleton
+
+Implement global Prisma Client singleton pattern to prevent multiple instances in Next.js development hot-reload environment.
+
+# ===== COMMIT 5 (2f5b6f5) =====
+feat(lib): add standardized API error handler
+
+Create utility function for consistent error handling across API routes with proper HTTP status codes and error messages.
+
+# ===== COMMIT 6 (e5a1687) =====
+feat(lib): add Zod validation utility
+
+Implement schema validation utility using Zod for runtime type-checking and data validation across the application.
+
+# ===== COMMIT 7 (8cba22d) =====
+feat(ui): create root layout and navigation
+
+Set up root application layout with global navigation bar component for consistent UI structure.
+
+# ===== COMMIT 8 (48aa4df) =====
+feat(lib): integrate TanStack Query for data fetching
+
+Add TanStack Query (React Query) for efficient client-side data fetching, caching, and synchronization with global metadata and navigation.
+
+# ===== COMMIT 9 (77a96d5) =====
+feat(auth): integrate NextAuth.js authentication
+
+Implement NextAuth.js for session management and add global UI components for error handling and loading states.
+
+# ===== COMMIT 10 (083ac46) =====
+feat(auth): add user registration API endpoint
+
+Create registration API with bcrypt password hashing, email/username uniqueness validation, and secure user creation.
+
+# ===== COMMIT 11 (f1e486e) =====
+feat(auth): add login and registration pages
+
+Implement user authentication flow with login/registration pages, session management, and dynamic navbar with user status.
+
+# ===== COMMIT 12 (daf7a0d) =====
+feat(db): integrate Prisma ORM with PostgreSQL
+
+Set up Prisma ORM connection with PostgreSQL database, configure NextAuth.js adapter, and create initial home page.
+
+# ===== COMMIT 13 (fc528da) =====
+feat(api): add question creation and retrieval endpoints
+
+Create API endpoints for creating and retrieving questions with input validation, HTML sanitization, and pagination support.
+
+# ===== COMMIT 14 (136124b) =====
+feat(api): add question management endpoints
+
+Implement API endpoints for question creation, retrieval, paginated listing, and admin-only soft deletion functionality.
+
+# ===== COMMIT 15 (055e6ab) =====
+feat(questions): add question pages and rich text editor
+
+Implement question listing, detail pages, and new question submission form with Tiptap rich text editor and syntax highlighting.
+
+# ===== COMMIT 16 (2f8906a) =====
+feat(api): add answer management endpoints
+
+Create API endpoints for answer creation, acceptance, and voting with reusable API handler utilities.
+
+# ===== COMMIT 17 (fa71411) =====
+feat(answers): add voting and answer display UI
+
+Implement answer voting API, enhance question detail API with answers and user votes, and add UI components for displaying and posting answers.
+
+# ===== COMMIT 18 (c4a7a8e) =====
+feat(notifications): add toast system and notification API
+
+Implement toast notification system, answer display, voting, acceptance, and posting functionality with notification API endpoints.
+
+# ===== COMMIT 19 (003568b) =====
+feat(notifications): add frontend notification system
+
+Implement notification system with custom React hook, notification bell icon, and dropdown menu integrated into navigation bar.
+
+# ===== COMMIT 20 (6511bc4) =====
+feat(users): add user profile page and API endpoints
+
+Create user profile page with dedicated API endpoints for user details and aggregated posts (questions and answers).
+
+# ===== COMMIT 21 (8ae8775) =====
+feat(api): implement core API routes and rate limiting
+
+Add API routes for questions, users, and notifications with TypeScript types and rate limiting middleware for security.
+
+# ===== COMMIT 22 (ad1349f) =====
+feat(questions): add question detail and creation features
+
+Implement question detail viewing and new question creation with API routes, TypeScript data types, and associated UI components.
+
+# ===== COMMIT 23 (3131312) =====
+fix: resolve minor bugs and issues
+
+Address various bug fixes and stability improvements across the application.
+
+# ===== COMMIT 24 (1c9e6a7) =====
+fix: resolve UI rendering issues
+
+Fix bugs related to UI component rendering and display inconsistencies.
+
+# ===== COMMIT 25 (8b18dae) =====
+fix: resolve authentication and data issues
+
+Address multiple bugs related to user authentication flow and data handling.
+
+# ===== COMMIT 26 (9532734) =====
+feat(auth): add password reset functionality
+
+Implement forgot password feature with email verification and secure password reset flow.
+
+# ===== COMMIT 27 (01dfb0d) =====
+chore: remove obsolete files
+
+Delete unnecessary and outdated files to clean up project structure.
+
+# ===== COMMIT 28 (8164f4d) =====
+chore: optimize project for deployment
+
+Clean up unnecessary files, remove debug scripts, and prepare codebase for production deployment.
+
+# ===== COMMIT 29 (b36bf9c) =====
+docs: add comprehensive README documentation
+
+Create detailed README with project overview, features, installation guide, usage instructions, and contribution guidelines.
+
+# ===== COMMIT 30 (fb81608) =====
+test: add reputation system test scripts
+
+Add testing scripts (JavaScript, PowerShell, Python) for validating reputation system functionality.
+
+# ===== COMMIT 31 (41f8a1b) =====
+feat(notifications): enhance notification and comment features
+
+Improve notification system with user session validation and add AI-powered tag suggestion functionality.
+
+# ===== COMMIT 32 (6f75a2c) =====
+feat(ai): implement AI-powered chatbot
+
+Add AI chatbot feature with Google Gemini integration for real-time user assistance and question guidance.
+
+# ===== COMMIT 33 (6fa6b09) =====
+feat(security): integrate sanitize-html library
+
+Add sanitize-html dependency for improved HTML sanitization and XSS attack prevention.
+
+# ===== COMMIT 34 (d83c935) =====
+feat(ai): migrate AI features to Google Gemini
+
+Migrate all AI features from OpenAI to Google Gemini API (100% free tier) including chatbot, embeddings, and analysis features.
+
+# ===== COMMIT 35 (b10fa64) =====
+feat(bounty): add bounty system and edit history
+
+Implement bounty rewards system for high-value questions and comprehensive edit history tracking with diff view.
+
+# ===== COMMIT 36 (d259708) =====
+chore: prepare project for production release
+
+Remove temporary documentation, test scripts, and internal files. Sanitize environment variables, create .env.example, and update README with professional documentation.
