@@ -32,6 +32,8 @@ model User {
   followed_questions FollowQuestion[]
   followed_by        FollowUser[]        @relation("FollowedUser")
   follows            FollowUser[]        @relation("FollowingUser")
+  bounties_offered   Bounty[]            @relation("BountiesOffered")
+  bounties_awarded   Bounty[]            @relation("BountiesAwarded")
 
   @@index([username])
   @@index([email])
@@ -160,6 +162,7 @@ model Question {
   duplicate_links    DuplicateLink[]   @relation("DuplicateQuestion")
   canonical_for      DuplicateLink[]   @relation("CanonicalQuestion")
   versions           QuestionVersion[]
+  bounties           Bounty[]
 
   @@index([created_at])
   @@index([score])
@@ -326,5 +329,36 @@ model AnswerVersion {
   @@unique([answer_id, version_number])
   @@index([answer_id, edited_at])
   @@index([edited_by_id])
+}
+
+// ─── Question Bounty System ──────────────────────────────────────────────────
+
+model Bounty {
+  id              String    @id @default(uuid())
+  question_id     String
+  offered_by_id   String
+  reputation_amount Int
+  offered_at      DateTime  @default(now())
+  expires_at      DateTime
+  status          BountyStatus @default(ACTIVE)
+  awarded_to_id   String?
+  awarded_at      DateTime?
+  awarded_reason  String?   @db.VarChar(500)
+  
+  question        Question  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  offered_by      User      @relation("BountiesOffered", fields: [offered_by_id], references: [id], onDelete: Cascade)
+  awarded_to      User?     @relation("BountiesAwarded", fields: [awarded_to_id], references: [id], onDelete: SetNull)
+
+  @@unique([question_id, offered_by_id])
+  @@index([question_id, status])
+  @@index([offered_by_id, offered_at])
+  @@index([expires_at])
+}
+
+enum BountyStatus {
+  ACTIVE
+  AWARDED
+  EXPIRED
+  CANCELLED
 }
 
