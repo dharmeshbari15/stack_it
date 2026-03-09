@@ -39,7 +39,7 @@ export default function CodeBlockParser({
     segments.push({
       type: 'code',
       language: match[1] || 'plaintext',
-      value: (match[2] || '').trim(),
+      value: match[2] || '',
     });
 
     lastIndex = index + match[0].length;
